@@ -230,19 +230,29 @@ function addCornerPanelsToScene() {
 
 function updateCornerPanelAnchors() {
   panelObjects.forEach((panelObject) => {
-    if (panelObject.userData.anchor !== 'top-left') return;
-
     const element = panelObject.element;
     const deltaWidth = element.offsetWidth - panelObject.userData.collapsedWidth;
     const deltaHeight = element.offsetHeight - panelObject.userData.collapsedHeight;
     const scale = panelObject.scale.x;
+    const direction = getPanelAnchorDirection(panelObject.userData.anchor);
 
     panelObject.position.set(
-      panelObject.userData.basePosition.x + (deltaWidth * scale) / 2,
-      panelObject.userData.basePosition.y - (deltaHeight * scale) / 2,
+      panelObject.userData.basePosition.x + direction.x * (deltaWidth * scale) / 2,
+      panelObject.userData.basePosition.y + direction.y * (deltaHeight * scale) / 2,
       panelObject.userData.basePosition.z
     );
   });
+}
+
+function getPanelAnchorDirection(anchor) {
+  const directions = {
+    'top-left': { x: 1, y: -1 },
+    'top-right': { x: -1, y: -1 },
+    'bottom-left': { x: 1, y: 1 },
+    'bottom-right': { x: -1, y: 1 }
+  };
+
+  return directions[anchor] ?? { x: 0, y: 0 };
 }
 
 function loadModel() {
