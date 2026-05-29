@@ -61,6 +61,10 @@ canvas {
     0 18px 56px rgba(0, 0, 0, 0.42);
 }
 
+.corner-panel--top-left {
+  transform-origin: top left;
+}
+
 .corner-panel__dot {
   position: absolute;
   top: 50%;
