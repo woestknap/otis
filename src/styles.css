@@ -21,16 +21,10 @@ canvas {
   display: block;
 }
 
-.webgl-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-}
-
 .css3d-layer {
   position: fixed;
   inset: 0;
-  z-index: 3;
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -54,22 +48,6 @@ canvas {
     background-color 220ms ease,
     border-color 220ms ease,
     box-shadow 220ms ease;
-}
-
-.corner-panel--top-left {
-  transform-origin: top left;
-}
-
-.corner-panel--top-right {
-  transform-origin: top right;
-}
-
-.corner-panel--bottom-left {
-  transform-origin: bottom left;
-}
-
-.corner-panel--bottom-right {
-  transform-origin: bottom right;
 }
 
 .corner-panel:hover,

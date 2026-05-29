@@ -14,10 +14,8 @@ let renderer;
 let cssRenderer;
 
 let model;
-let modelGlow;
 let logoPlane;
 let rotationAnimation = null;
-let isModelHovered = false;
 
 let mouseX = 0;
 let mouseY = 0;
@@ -47,7 +45,6 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animate);
-  renderer.domElement.className = 'webgl-layer';
   container.appendChild(renderer.domElement);
   renderer.domElement.addEventListener('click', onCanvasClick);
 
@@ -94,7 +91,6 @@ function onWindowResize() {
 function onDocumentMouseMove(event) {
   mouseX = (event.clientX - windowHalfX) / windowHalfX;
   mouseY = (event.clientY - windowHalfY) / windowHalfY;
-  updateModelHover(event);
 }
 
 function onBaseStationPanelEnter() {
@@ -124,7 +120,13 @@ function animate() {
 function onCanvasClick(event) {
   if (!model) return;
 
-  if (!isPointerOnModel(event)) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+
+  if (raycaster.intersectObject(model, true).length === 0) return;
 
   rotationAnimation = {
     from: model.rotation.y,
@@ -132,29 +134,6 @@ function onCanvasClick(event) {
     startTime: performance.now(),
     duration: 900
   };
-}
-
-function updateModelHover(event) {
-  const nextHoverState = isPointerOnModel(event);
-  if (nextHoverState === isModelHovered) return;
-
-  isModelHovered = nextHoverState;
-  renderer.domElement.style.cursor = isModelHovered ? 'pointer' : '';
-
-  if (modelGlow) {
-    modelGlow.material.opacity = isModelHovered ? 0.18 : 0;
-  }
-}
-
-function isPointerOnModel(event) {
-  if (!model || !renderer) return false;
-
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(pointer, camera);
-  return raycaster.intersectObject(model, true).length > 0;
 }
 
 function updateModelRotation() {
@@ -267,27 +246,9 @@ function loadModel() {
     fitModelToScene(model, 1.05);
     model.rotation.y = -Math.PI / 2;
     scene.add(model);
-    addModelGlow();
   }, undefined, (error) => {
     console.error('Failed to load Otis GLB model.', error);
   });
-}
-
-function addModelGlow() {
-  const glowGeometry = new THREE.SphereGeometry(0.66, 48, 24);
-  const glowMaterial = new THREE.MeshBasicMaterial({
-    color: 0x48dfff,
-    transparent: true,
-    opacity: 0,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    side: THREE.BackSide
-  });
-
-  modelGlow = new THREE.Mesh(glowGeometry, glowMaterial);
-  modelGlow.position.copy(model.position);
-  modelGlow.scale.set(1.05, 1.28, 1.05);
-  scene.add(modelGlow);
 }
 
 function fitModelToScene(object, targetSize) {
