@@ -37,12 +37,12 @@ function init() {
 
   const geometry = new THREE.SphereGeometry(0.45, 64, 32);
   const material = new THREE.MeshStandardMaterial({
-    color: 0x78d7e5,
-    metalness: 0.32,
-    roughness: 0.72,
-    envMapIntensity: 0.5,
+    color: 0x9af7ff,
+    metalness: 1,
+    roughness: 0.2,
+    envMapIntensity: 1.6,
     emissive: 0x003a4d,
-    emissiveIntensity: 0.24
+    emissiveIntensity: 0.38
   });
 
   sphere = new THREE.Mesh(geometry, material);
@@ -124,10 +124,10 @@ function drawHologrid(ctx, width, height) {
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
 
-  drawWrappedVerticalLines(ctx, width, height, 48, 'rgba(36, 214, 255, 0.27)', 1);
-  drawWrappedVerticalLines(ctx, width, height, 192, 'rgba(81, 246, 255, 0.48)', 2);
-  drawHorizontalLines(ctx, width, height, 48, 'rgba(36, 214, 255, 0.24)', 1);
-  drawHorizontalLines(ctx, width, height, 192, 'rgba(81, 246, 255, 0.44)', 2);
+  drawWrappedVerticalLines(ctx, width, height, 64, 'rgba(36, 214, 255, 0.27)', 1);
+  drawWrappedVerticalLines(ctx, width, height, 256, 'rgba(81, 246, 255, 0.48)', 2);
+  drawHorizontalLines(ctx, width, height, 64, 'rgba(36, 214, 255, 0.24)', 1);
+  drawHorizontalLines(ctx, width, height, 256, 'rgba(81, 246, 255, 0.44)', 2);
 
   const seed = 42;
   for (let i = 0; i < 140; i += 1) {
