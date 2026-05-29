@@ -10,6 +10,8 @@ let sphere;
 
 let mouseX = 0;
 let mouseY = 0;
+const cameraRadius = 3;
+const targetCameraPosition = new THREE.Vector3();
 
 let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
@@ -23,7 +25,7 @@ function init() {
   document.body.appendChild(container);
 
   camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
-  camera.position.z = 3;
+  camera.position.z = cameraRadius;
 
   const hologridTexture = createHologridTexture();
 
@@ -35,12 +37,12 @@ function init() {
 
   const geometry = new THREE.SphereGeometry(0.45, 64, 32);
   const material = new THREE.MeshStandardMaterial({
-    color: 0x9af7ff,
-    metalness: 1,
-    roughness: 0.04,
-    envMapIntensity: 1.6,
+    color: 0x78d7e5,
+    metalness: 0.32,
+    roughness: 0.72,
+    envMapIntensity: 0.5,
     emissive: 0x003a4d,
-    emissiveIntensity: 0.38
+    emissiveIntensity: 0.24
   });
 
   sphere = new THREE.Mesh(geometry, material);
@@ -67,15 +69,23 @@ function onWindowResize() {
 }
 
 function onDocumentMouseMove(event) {
-  mouseX = (event.clientX - windowHalfX) / 100;
-  mouseY = (event.clientY - windowHalfY) / 100;
+  mouseX = (event.clientX - windowHalfX) / windowHalfX;
+  mouseY = (event.clientY - windowHalfY) / windowHalfY;
 }
 
 function animate() {
   const timer = 0.0001 * Date.now();
 
-  camera.position.x += (mouseX - camera.position.x) * 0.05;
-  camera.position.y += (-mouseY - camera.position.y) * 0.05;
+  const yaw = mouseX * 0.34;
+  const pitch = -mouseY * 0.22;
+
+  targetCameraPosition.set(
+    Math.sin(yaw) * Math.cos(pitch) * cameraRadius,
+    Math.sin(pitch) * cameraRadius,
+    Math.cos(yaw) * Math.cos(pitch) * cameraRadius
+  );
+
+  camera.position.lerp(targetCameraPosition, 0.05).setLength(cameraRadius);
 
   camera.lookAt(scene.position);
 
@@ -114,10 +124,10 @@ function drawHologrid(ctx, width, height) {
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
 
-  drawWrappedVerticalLines(ctx, width, height, 128, 'rgba(36, 214, 255, 0.34)', 1);
-  drawWrappedVerticalLines(ctx, width, height, 512, 'rgba(81, 246, 255, 0.58)', 2);
-  drawHorizontalLines(ctx, width, height, 128, 'rgba(36, 214, 255, 0.30)', 1);
-  drawHorizontalLines(ctx, width, height, 512, 'rgba(81, 246, 255, 0.54)', 2);
+  drawWrappedVerticalLines(ctx, width, height, 48, 'rgba(36, 214, 255, 0.27)', 1);
+  drawWrappedVerticalLines(ctx, width, height, 192, 'rgba(81, 246, 255, 0.48)', 2);
+  drawHorizontalLines(ctx, width, height, 48, 'rgba(36, 214, 255, 0.24)', 1);
+  drawHorizontalLines(ctx, width, height, 192, 'rgba(81, 246, 255, 0.44)', 2);
 
   const seed = 42;
   for (let i = 0; i < 140; i += 1) {
