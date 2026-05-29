@@ -118,7 +118,7 @@ function animate() {
 }
 
 function onCanvasClick(event) {
-  if (!model) return;
+  if (!model || rotationAnimation) return;
 
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
