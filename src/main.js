@@ -16,6 +16,7 @@ let cssRenderer;
 let model;
 let logoPlane;
 let rotationAnimation = null;
+const panelObjects = [];
 
 let mouseX = 0;
 let mouseY = 0;
@@ -111,6 +112,7 @@ function animate() {
 
   camera.lookAt(scene.position);
 
+  updateCornerPanelAnchors();
   updateModelRotation();
 
   renderer.render(scene, camera);
@@ -204,20 +206,42 @@ function addLogoPlane() {
 
 function addCornerPanelsToScene() {
   const panelConfigs = [
-    ['.corner-panel--top-left', [-1.55, 0.92, 0]],
-    ['.corner-panel--top-right', [1.55, 0.92, 0]],
-    ['.corner-panel--bottom-left', [-1.55, -0.92, 0]],
-    ['.corner-panel--bottom-right', [1.55, -0.92, 0]]
+    ['.corner-panel--top-left', [-1.55, 0.92, 0], 'top-left'],
+    ['.corner-panel--top-right', [1.55, 0.92, 0], 'top-right'],
+    ['.corner-panel--bottom-left', [-1.55, -0.92, 0], 'bottom-left'],
+    ['.corner-panel--bottom-right', [1.55, -0.92, 0], 'bottom-right']
   ];
 
-  panelConfigs.forEach(([selector, position]) => {
+  panelConfigs.forEach(([selector, position, anchor]) => {
     const element = document.querySelector(selector);
     if (!element) return;
 
     const panelObject = new CSS3DObject(element);
     panelObject.position.fromArray(position);
     panelObject.scale.setScalar(0.0038);
+    panelObject.userData.anchor = anchor;
+    panelObject.userData.basePosition = panelObject.position.clone();
+    panelObject.userData.collapsedWidth = element.offsetWidth;
+    panelObject.userData.collapsedHeight = element.offsetHeight;
+    panelObjects.push(panelObject);
     scene.add(panelObject);
+  });
+}
+
+function updateCornerPanelAnchors() {
+  panelObjects.forEach((panelObject) => {
+    if (panelObject.userData.anchor !== 'top-left') return;
+
+    const element = panelObject.element;
+    const deltaWidth = element.offsetWidth - panelObject.userData.collapsedWidth;
+    const deltaHeight = element.offsetHeight - panelObject.userData.collapsedHeight;
+    const scale = panelObject.scale.x;
+
+    panelObject.position.set(
+      panelObject.userData.basePosition.x + (deltaWidth * scale) / 2,
+      panelObject.userData.basePosition.y - (deltaHeight * scale) / 2,
+      panelObject.userData.basePosition.z
+    );
   });
 }
 
