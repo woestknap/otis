@@ -50,6 +50,22 @@ canvas {
     box-shadow 220ms ease;
 }
 
+.corner-panel--top-left {
+  transform-origin: top left;
+}
+
+.corner-panel--top-right {
+  transform-origin: top right;
+}
+
+.corner-panel--bottom-left {
+  transform-origin: bottom left;
+}
+
+.corner-panel--bottom-right {
+  transform-origin: bottom right;
+}
+
 .corner-panel:hover,
 .corner-panel:focus-within {
   width: min(300px, calc(100vw - 32px));

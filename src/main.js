@@ -16,6 +16,7 @@ let cssRenderer;
 let model;
 let logoPlane;
 let rotationAnimation = null;
+let isModelHovered = false;
 
 let mouseX = 0;
 let mouseY = 0;
@@ -91,6 +92,7 @@ function onWindowResize() {
 function onDocumentMouseMove(event) {
   mouseX = (event.clientX - windowHalfX) / windowHalfX;
   mouseY = (event.clientY - windowHalfY) / windowHalfY;
+  updateModelHover(event);
 }
 
 function onBaseStationPanelEnter() {
@@ -120,13 +122,7 @@ function animate() {
 function onCanvasClick(event) {
   if (!model) return;
 
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(pointer, camera);
-
-  if (raycaster.intersectObject(model, true).length === 0) return;
+  if (!isPointerOnModel(event)) return;
 
   rotationAnimation = {
     from: model.rotation.y,
@@ -134,6 +130,51 @@ function onCanvasClick(event) {
     startTime: performance.now(),
     duration: 900
   };
+}
+
+function updateModelHover(event) {
+  const nextHoverState = isPointerOnModel(event);
+  if (nextHoverState === isModelHovered) return;
+
+  isModelHovered = nextHoverState;
+  renderer.domElement.style.cursor = isModelHovered ? 'pointer' : '';
+
+  if (!model) return;
+
+  model.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach((material) => {
+      if (!material.userData.originalEmissive && material.emissive) {
+        material.userData.originalEmissive = material.emissive.clone();
+        material.userData.originalEmissiveIntensity = material.emissiveIntensity ?? 1;
+      }
+
+      if (!material.emissive) return;
+
+      if (isModelHovered) {
+        material.emissive.set(0x48dfff);
+        material.emissiveIntensity = 0.16;
+      } else {
+        material.emissive.copy(material.userData.originalEmissive);
+        material.emissiveIntensity = material.userData.originalEmissiveIntensity;
+      }
+
+      material.needsUpdate = true;
+    });
+  });
+}
+
+function isPointerOnModel(event) {
+  if (!model || !renderer) return false;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+  return raycaster.intersectObject(model, true).length > 0;
 }
 
 function updateModelRotation() {
