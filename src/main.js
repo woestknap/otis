@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import otisModelUrl from './otis_shell_v2.glb?url';
 import otisLogoUrl from './otis_logo-06.svg?url';
 
@@ -10,6 +11,7 @@ let container;
 let camera;
 let scene;
 let renderer;
+let cssRenderer;
 
 let model;
 let logoPlane;
@@ -46,6 +48,11 @@ function init() {
   container.appendChild(renderer.domElement);
   renderer.domElement.addEventListener('click', onCanvasClick);
 
+  cssRenderer = new CSS3DRenderer();
+  cssRenderer.setSize(window.innerWidth, window.innerHeight);
+  cssRenderer.domElement.className = 'css3d-layer';
+  document.body.appendChild(cssRenderer.domElement);
+
   const hologridTexture = createHologridTexture();
   const studioEnvironment = createStudioEnvironment();
 
@@ -64,6 +71,7 @@ function init() {
   scene.add(fillLight);
 
   addLogoPlane();
+  addCornerPanelsToScene();
   loadModel();
 
   window.addEventListener('resize', onWindowResize);
@@ -77,6 +85,7 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
 
   renderer.setSize(window.innerWidth, window.innerHeight);
+  cssRenderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function onDocumentMouseMove(event) {
@@ -105,6 +114,7 @@ function animate() {
   updateModelRotation();
 
   renderer.render(scene, camera);
+  cssRenderer.render(scene, camera);
 }
 
 function onCanvasClick(event) {
@@ -187,8 +197,27 @@ function addLogoPlane() {
     });
 
     logoPlane = new THREE.Mesh(geometry, material);
-    logoPlane.position.set(-0.06, 0.92, 0);
+    logoPlane.position.set(-0.06, 0.82, 0);
     scene.add(logoPlane);
+  });
+}
+
+function addCornerPanelsToScene() {
+  const panelConfigs = [
+    ['.corner-panel--top-left', [-1.55, 0.92, 0]],
+    ['.corner-panel--top-right', [1.55, 0.92, 0]],
+    ['.corner-panel--bottom-left', [-1.55, -0.92, 0]],
+    ['.corner-panel--bottom-right', [1.55, -0.92, 0]]
+  ];
+
+  panelConfigs.forEach(([selector, position]) => {
+    const element = document.querySelector(selector);
+    if (!element) return;
+
+    const panelObject = new CSS3DObject(element);
+    panelObject.position.fromArray(position);
+    panelObject.scale.setScalar(0.0038);
+    scene.add(panelObject);
   });
 }
 

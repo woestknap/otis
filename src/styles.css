@@ -21,11 +21,17 @@ canvas {
   display: block;
 }
 
-.corner-panel {
+.css3d-layer {
   position: fixed;
+  inset: 0;
   z-index: 2;
-  width: 84px;
-  height: 84px;
+  pointer-events: none;
+}
+
+.corner-panel {
+  position: absolute;
+  width: 42px;
+  height: 42px;
   border: 1px solid rgba(255, 255, 255, 0.88);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
@@ -35,6 +41,7 @@ canvas {
     0 12px 42px rgba(0, 0, 0, 0.28);
   overflow: hidden;
   cursor: default;
+  pointer-events: auto;
   transition:
     width 280ms ease,
     height 280ms ease,
@@ -45,33 +52,13 @@ canvas {
 
 .corner-panel:hover,
 .corner-panel:focus-within {
-  width: min(600px, calc(100vw - 32px));
-  height: 312px;
+  width: min(300px, calc(100vw - 32px));
+  height: 156px;
   background: rgba(255, 255, 255, 0.96);
   border-color: rgba(147, 245, 255, 0.92);
   box-shadow:
     0 0 30px rgba(77, 225, 255, 0.34),
     0 18px 56px rgba(0, 0, 0, 0.42);
-}
-
-.corner-panel--top-left {
-  top: 18px;
-  left: 18px;
-}
-
-.corner-panel--top-right {
-  top: 18px;
-  right: 18px;
-}
-
-.corner-panel--bottom-left {
-  bottom: 18px;
-  left: 18px;
-}
-
-.corner-panel--bottom-right {
-  right: 18px;
-  bottom: 18px;
 }
 
 .corner-panel__dot {
@@ -95,8 +82,8 @@ canvas {
 }
 
 .corner-panel__content {
-  width: 600px;
-  padding: 32px;
+  width: 300px;
+  padding: 18px 18px 16px;
   opacity: 0;
   transform: translateY(8px);
   transition:
@@ -111,9 +98,9 @@ canvas {
 }
 
 .corner-panel h2 {
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   color: #06111a;
-  font-size: 1.55rem;
+  font-size: 0.92rem;
   line-height: 1.15;
   letter-spacing: 0;
 }
@@ -121,52 +108,24 @@ canvas {
 .corner-panel p {
   margin: 0;
   color: rgba(6, 17, 26, 0.78);
-  font-size: 1.05rem;
+  font-size: 0.78rem;
   line-height: 1.45;
 }
 
 @media (max-width: 620px) {
   .corner-panel {
-    width: 72px;
-    height: 72px;
+    width: 36px;
+    height: 36px;
   }
 
   .corner-panel:hover,
   .corner-panel:focus-within {
-    width: min(320px, calc(100vw - 28px));
-    height: 236px;
-  }
-
-  .corner-panel--top-left {
-    top: 14px;
-    left: 14px;
-  }
-
-  .corner-panel--top-right {
-    top: 14px;
-    right: 14px;
-  }
-
-  .corner-panel--bottom-left {
-    bottom: 14px;
-    left: 14px;
-  }
-
-  .corner-panel--bottom-right {
-    right: 14px;
-    bottom: 14px;
+    width: min(260px, calc(100vw - 28px));
+    height: 150px;
   }
 
   .corner-panel__content {
-    width: 320px;
-    padding: 24px;
-  }
-
-  .corner-panel h2 {
-    font-size: 1.18rem;
-  }
-
-  .corner-panel p {
-    font-size: 0.88rem;
+    width: 260px;
+    padding: 15px;
   }
 }
