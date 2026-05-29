@@ -4,6 +4,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import otisModelUrl from './otis_shell_v2.glb?url';
+import otisLogoUrl from './otis_logo-06.svg?url';
 
 let container;
 let camera;
@@ -11,6 +12,7 @@ let scene;
 let renderer;
 
 let model;
+let logoPlane;
 let rotationAnimation = null;
 
 let mouseX = 0;
@@ -61,6 +63,7 @@ function init() {
   fillLight.position.set(-4, 2, -3);
   scene.add(fillLight);
 
+  addLogoPlane();
   loadModel();
 
   window.addEventListener('resize', onWindowResize);
@@ -164,6 +167,30 @@ function createStudioEnvironment() {
   const environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
   pmremGenerator.dispose();
   return environment;
+}
+
+function addLogoPlane() {
+  const loader = new THREE.TextureLoader();
+
+  loader.load(otisLogoUrl, (texture) => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 8;
+
+    const aspect = texture.image.width / texture.image.height;
+    const logoHeight = 0.42;
+    const geometry = new THREE.PlaneGeometry(logoHeight * aspect, logoHeight);
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+
+    logoPlane = new THREE.Mesh(geometry, material);
+    logoPlane.position.set(0, 0.92, 0);
+    logoPlane.rotation.x = -0.08;
+    scene.add(logoPlane);
+  });
 }
 
 function loadModel() {
