@@ -1,6 +1,8 @@
-# Otis Companion Bot Site
+# Otis Companion Bot Site Base
 
-Sci-fi Three.js landing site for the Otis companion bot project. The first pass uses a procedural robot model, a blue hologrid environment, and the Three.js parallax barrier stereo effect as the render base.
+Small-step Three.js baseline for the Otis companion bot project.
+
+This version mirrors the official `webgl_effects_parallaxbarrier` example scene: reflective spheres, the Pisa cube skybox, and mouse-driven camera parallax. The only intentional change is rendering with the normal `WebGLRenderer` instead of `ParallaxBarrierEffect`, which removes the doubled/blurry stereo barrier output.
 
 ## Local Development
 
@@ -21,6 +23,6 @@ Cloudflare Pages can build this as a Vite static site:
 - Build output directory: `dist`
 - Project config: `wrangler.toml`
 
-## Model Swap
+## Next Steps
 
-When a real bot model is ready, add a `.glb` or `.gltf` asset under `public/models/` and replace `createCompanionBot()` in `src/main.js` with a `GLTFLoader` import.
+Use this as the clean visual baseline before adding project-specific styling, sci-fi treatment, info planes, and the companion bot model.
