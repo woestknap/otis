@@ -1,7 +1,9 @@
 import './styles.css';
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import otisModelUrl from '../assets/otis_shell_v1.glb?url';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import otisModelUrl from './otis_shell_v2.glb?url';
 
 let container;
 let camera;
@@ -29,29 +31,30 @@ function init() {
   camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
   camera.position.z = cameraRadius;
 
-  const hologridTexture = createHologridTexture();
-
-  scene = new THREE.Scene();
-  scene.background = hologridTexture;
-  scene.environment = hologridTexture;
-
-  scene.add(new THREE.AmbientLight(0x66eaff, 0.85));
-
-  const keyLight = new THREE.DirectionalLight(0x9af7ff, 2.3);
-  keyLight.position.set(3, 4, 5);
-  scene.add(keyLight);
-
-  const fillLight = new THREE.DirectionalLight(0x1d78ff, 1.2);
-  fillLight.position.set(-4, 2, -3);
-  scene.add(fillLight);
-
-  loadModel(hologridTexture);
-
   renderer = new THREE.WebGLRenderer();
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animate);
   container.appendChild(renderer.domElement);
+
+  const hologridTexture = createHologridTexture();
+  const studioEnvironment = createStudioEnvironment();
+
+  scene = new THREE.Scene();
+  scene.background = hologridTexture;
+  scene.environment = studioEnvironment;
+
+  scene.add(new THREE.AmbientLight(0x66eaff, 0.22));
+
+  const keyLight = new THREE.DirectionalLight(0x9af7ff, 0.7);
+  keyLight.position.set(3, 4, 5);
+  scene.add(keyLight);
+
+  const fillLight = new THREE.DirectionalLight(0x1d78ff, 0.35);
+  fillLight.position.set(-4, 2, -3);
+  scene.add(fillLight);
+
+  loadModel();
 
   window.addEventListener('resize', onWindowResize);
 }
@@ -112,8 +115,19 @@ function createHologridTexture() {
   return texture;
 }
 
-function loadModel(environmentTexture) {
+function createStudioEnvironment() {
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  const environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmremGenerator.dispose();
+  return environment;
+}
+
+function loadModel() {
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('/draco/');
+
   const loader = new GLTFLoader();
+  loader.setDRACOLoader(dracoLoader);
 
   loader.load(otisModelUrl, (gltf) => {
     model = gltf.scene;
@@ -125,28 +139,32 @@ function loadModel(environmentTexture) {
       child.receiveShadow = true;
 
       if (child.material) {
-        child.material.envMap = environmentTexture;
-        child.material.envMapIntensity = 1.1;
+        child.material.envMapIntensity = 1.05;
         child.material.needsUpdate = true;
       }
     });
 
     fitModelToScene(model, 1.05);
     scene.add(model);
+  }, undefined, (error) => {
+    console.error('Failed to load Otis GLB model.', error);
   });
 }
 
 function fitModelToScene(object, targetSize) {
   const box = new THREE.Box3().setFromObject(object);
   const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
   const maxDimension = Math.max(size.x, size.y, size.z);
-
-  object.position.sub(center);
 
   if (maxDimension > 0) {
     object.scale.setScalar(targetSize / maxDimension);
   }
+
+  object.updateMatrixWorld(true);
+
+  const centeredBox = new THREE.Box3().setFromObject(object);
+  const center = centeredBox.getCenter(new THREE.Vector3());
+  object.position.sub(center);
 }
 
 function drawHologrid(ctx, width, height) {
