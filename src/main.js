@@ -11,11 +11,14 @@ let scene;
 let renderer;
 
 let model;
+let rotationAnimation = null;
 
 let mouseX = 0;
 let mouseY = 0;
 const cameraRadius = 3;
 const targetCameraPosition = new THREE.Vector3();
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
 
 let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
@@ -36,6 +39,7 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animate);
   container.appendChild(renderer.domElement);
+  renderer.domElement.addEventListener('click', onCanvasClick);
 
   const hologridTexture = createHologridTexture();
   const studioEnvironment = createStudioEnvironment();
@@ -88,7 +92,46 @@ function animate() {
 
   camera.lookAt(scene.position);
 
+  updateModelRotation();
+
   renderer.render(scene, camera);
+}
+
+function onCanvasClick(event) {
+  if (!model) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+
+  if (raycaster.intersectObject(model, true).length === 0) return;
+
+  rotationAnimation = {
+    from: model.rotation.y,
+    to: model.rotation.y + Math.PI,
+    startTime: performance.now(),
+    duration: 900
+  };
+}
+
+function updateModelRotation() {
+  if (!model || !rotationAnimation) return;
+
+  const elapsed = performance.now() - rotationAnimation.startTime;
+  const progress = Math.min(elapsed / rotationAnimation.duration, 1);
+  const easedProgress = easeOutCubic(progress);
+
+  model.rotation.y = THREE.MathUtils.lerp(
+    rotationAnimation.from,
+    rotationAnimation.to,
+    easedProgress
+  );
+
+  if (progress === 1) {
+    rotationAnimation = null;
+  }
 }
 
 function createHologridTexture() {
@@ -217,4 +260,8 @@ function drawHorizontalLines(ctx, width, height, step, color, lineWidth) {
 function seededRandom(value) {
   const x = Math.sin(value) * 10000;
   return x - Math.floor(x);
+}
+
+function easeOutCubic(value) {
+  return 1 - Math.pow(1 - value, 3);
 }
