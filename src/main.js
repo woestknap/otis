@@ -75,8 +75,6 @@ function onDocumentMouseMove(event) {
 }
 
 function animate() {
-  const timer = 0.0001 * Date.now();
-
   const yaw = mouseX * 0.34;
   const pitch = -mouseY * 0.22;
 
@@ -89,10 +87,6 @@ function animate() {
   camera.position.lerp(targetCameraPosition, 0.05).setLength(cameraRadius);
 
   camera.lookAt(scene.position);
-
-  if (model) {
-    model.rotation.y = timer * 2.4;
-  }
 
   renderer.render(scene, camera);
 }
@@ -145,6 +139,7 @@ function loadModel() {
     });
 
     fitModelToScene(model, 1.05);
+    model.rotation.y = -Math.PI / 2;
     scene.add(model);
   }, undefined, (error) => {
     console.error('Failed to load Otis GLB model.', error);
