@@ -187,8 +187,7 @@ function addLogoPlane() {
     });
 
     logoPlane = new THREE.Mesh(geometry, material);
-    logoPlane.position.set(0, 0.92, 0);
-    logoPlane.rotation.x = -0.08;
+    logoPlane.position.set(-0.06, 0.92, 0);
     scene.add(logoPlane);
   });
 }
