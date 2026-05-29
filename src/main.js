@@ -25,10 +25,11 @@ function init() {
   camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
   camera.position.z = 3;
 
-  const textureCube = createHologridCubeTexture();
+  const hologridTexture = createHologridTexture();
 
   scene = new THREE.Scene();
-  scene.background = textureCube;
+  scene.background = hologridTexture;
+  scene.environment = hologridTexture;
 
   scene.add(new THREE.AmbientLight(0x66eaff, 0.85));
 
@@ -37,7 +38,6 @@ function init() {
     color: 0x9af7ff,
     metalness: 1,
     roughness: 0.04,
-    envMap: textureCube,
     envMapIntensity: 1.6,
     emissive: 0x003a4d,
     emissiveIntensity: 0.38
@@ -85,83 +85,77 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function createHologridCubeTexture() {
-  const faces = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
-  const canvases = faces.map((face) => createHologridFace(face));
-  const texture = new THREE.CubeTexture(canvases);
+function createHologridTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2048;
+  canvas.height = 1024;
+
+  const ctx = canvas.getContext('2d');
+  drawHologrid(ctx, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = 8;
   texture.needsUpdate = true;
   return texture;
 }
 
-function createHologridFace(face) {
-  const size = 1024;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+function drawHologrid(ctx, width, height) {
+  const centerX = width / 2;
+  const centerY = height / 2;
 
-  const ctx = canvas.getContext('2d');
-  const center = size / 2;
-
-  const glow = ctx.createRadialGradient(center, center, 0, center, center, size * 0.72);
+  const glow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, width * 0.48);
   glow.addColorStop(0, '#041b2a');
   glow.addColorStop(0.42, '#010814');
   glow.addColorStop(1, '#000208');
   ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, width, height);
 
-  ctx.save();
-  ctx.translate(center, center);
+  drawWrappedVerticalLines(ctx, width, height, 128, 'rgba(36, 214, 255, 0.34)', 1);
+  drawWrappedVerticalLines(ctx, width, height, 512, 'rgba(81, 246, 255, 0.58)', 2);
+  drawHorizontalLines(ctx, width, height, 128, 'rgba(36, 214, 255, 0.30)', 1);
+  drawHorizontalLines(ctx, width, height, 512, 'rgba(81, 246, 255, 0.54)', 2);
 
-  const faceRotation = {
-    px: 0.2,
-    nx: -0.2,
-    py: Math.PI / 2,
-    ny: -Math.PI / 2,
-    pz: 0,
-    nz: Math.PI
-  }[face];
-  ctx.rotate(faceRotation);
-
-  drawGrid(ctx, size, 64, 'rgba(36, 214, 255, 0.34)', 1);
-  drawGrid(ctx, size, 256, 'rgba(81, 246, 255, 0.56)', 2);
-
-  ctx.strokeStyle = 'rgba(0, 132, 255, 0.22)';
-  ctx.lineWidth = 1;
-  for (let i = -size; i <= size; i += 128) {
-    ctx.beginPath();
-    ctx.moveTo(-size, i * 0.45);
-    ctx.lineTo(size, i * 0.45 + size * 0.24);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-
-  ctx.fillStyle = 'rgba(71, 231, 255, 0.95)';
-  for (let i = 0; i < 90; i += 1) {
-    const x = Math.random() * size;
-    const y = Math.random() * size;
-    const alpha = 0.18 + Math.random() * 0.42;
+  const seed = 42;
+  for (let i = 0; i < 140; i += 1) {
+    const randomA = seededRandom(seed + i * 2);
+    const randomB = seededRandom(seed + i * 2 + 1);
+    const x = randomA * width;
+    const y = randomB * height;
+    const alpha = 0.18 + seededRandom(seed + i * 3 + 2) * 0.42;
     ctx.fillStyle = `rgba(71, 231, 255, ${alpha})`;
     ctx.fillRect(x, y, 1.5, 1.5);
   }
-
-  return canvas;
 }
 
-function drawGrid(ctx, size, step, color, lineWidth) {
+function drawWrappedVerticalLines(ctx, width, height, step, color, lineWidth) {
   ctx.strokeStyle = color;
   ctx.lineWidth = lineWidth;
 
-  for (let i = -size; i <= size; i += step) {
+  for (let x = step / 2; x < width; x += step) {
     ctx.beginPath();
-    ctx.moveTo(i, -size);
-    ctx.lineTo(i, size);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(-size, i);
-    ctx.lineTo(size, i);
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
     ctx.stroke();
   }
+}
+
+function drawHorizontalLines(ctx, width, height, step, color, lineWidth) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+
+  for (let y = step / 2; y < height; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+}
+
+function seededRandom(value) {
+  const x = Math.sin(value) * 10000;
+  return x - Math.floor(x);
 }
