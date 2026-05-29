@@ -99,8 +99,8 @@ function onBaseStationPanelEnter() {
 }
 
 function animate() {
-  const yaw = mouseX * 0.68;
-  const pitch = -mouseY * 0.44;
+  const yaw = mouseX * 0.54;
+  const pitch = -mouseY * 0.3;
 
   targetCameraPosition.set(
     Math.sin(yaw) * Math.cos(pitch) * cameraRadius,
