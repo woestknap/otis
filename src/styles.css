@@ -52,8 +52,8 @@ canvas {
 
 .corner-panel:hover,
 .corner-panel:focus-within {
-  width: min(300px, calc(100vw - 32px));
-  height: 156px;
+  width: min(270px, calc(100vw - 32px));
+  height: 140px;
   background: rgba(255, 255, 255, 0.96);
   border-color: rgba(147, 245, 255, 0.92);
   box-shadow:
@@ -82,8 +82,8 @@ canvas {
 }
 
 .corner-panel__content {
-  width: 300px;
-  padding: 18px 18px 16px;
+  width: 270px;
+  padding: 16px;
   opacity: 0;
   transform: translateY(8px);
   transition:
@@ -120,12 +120,12 @@ canvas {
 
   .corner-panel:hover,
   .corner-panel:focus-within {
-    width: min(260px, calc(100vw - 28px));
-    height: 150px;
+    width: min(234px, calc(100vw - 28px));
+    height: 135px;
   }
 
   .corner-panel__content {
-    width: 260px;
-    padding: 15px;
+    width: 234px;
+    padding: 14px;
   }
 }
