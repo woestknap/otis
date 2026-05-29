@@ -1,12 +1,14 @@
 import './styles.css';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import otisModelUrl from '../assets/otis_shell_v1.glb?url';
 
 let container;
 let camera;
 let scene;
 let renderer;
 
-let sphere;
+let model;
 
 let mouseX = 0;
 let mouseY = 0;
@@ -35,19 +37,15 @@ function init() {
 
   scene.add(new THREE.AmbientLight(0x66eaff, 0.85));
 
-  const geometry = new THREE.SphereGeometry(0.45, 64, 32);
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x9af7ff,
-    metalness: 1,
-    roughness: 0.2,
-    envMapIntensity: 1.6,
-    emissive: 0x003a4d,
-    emissiveIntensity: 0.38
-  });
+  const keyLight = new THREE.DirectionalLight(0x9af7ff, 2.3);
+  keyLight.position.set(3, 4, 5);
+  scene.add(keyLight);
 
-  sphere = new THREE.Mesh(geometry, material);
-  sphere.position.set(0, 0, 0);
-  scene.add(sphere);
+  const fillLight = new THREE.DirectionalLight(0x1d78ff, 1.2);
+  fillLight.position.set(-4, 2, -3);
+  scene.add(fillLight);
+
+  loadModel(hologridTexture);
 
   renderer = new THREE.WebGLRenderer();
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -89,8 +87,9 @@ function animate() {
 
   camera.lookAt(scene.position);
 
-  sphere.rotation.x = timer * 1.7;
-  sphere.rotation.y = timer * 2.4;
+  if (model) {
+    model.rotation.y = timer * 2.4;
+  }
 
   renderer.render(scene, camera);
 }
@@ -111,6 +110,43 @@ function createHologridTexture() {
   texture.anisotropy = 8;
   texture.needsUpdate = true;
   return texture;
+}
+
+function loadModel(environmentTexture) {
+  const loader = new GLTFLoader();
+
+  loader.load(otisModelUrl, (gltf) => {
+    model = gltf.scene;
+
+    model.traverse((child) => {
+      if (!child.isMesh) return;
+
+      child.castShadow = true;
+      child.receiveShadow = true;
+
+      if (child.material) {
+        child.material.envMap = environmentTexture;
+        child.material.envMapIntensity = 1.1;
+        child.material.needsUpdate = true;
+      }
+    });
+
+    fitModelToScene(model, 1.05);
+    scene.add(model);
+  });
+}
+
+function fitModelToScene(object, targetSize) {
+  const box = new THREE.Box3().setFromObject(object);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDimension = Math.max(size.x, size.y, size.z);
+
+  object.position.sub(center);
+
+  if (maxDimension > 0) {
+    object.scale.setScalar(targetSize / maxDimension);
+  }
 }
 
 function drawHologrid(ctx, width, height) {
