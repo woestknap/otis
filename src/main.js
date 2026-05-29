@@ -218,7 +218,7 @@ function addCornerPanelsToScene() {
 
     const panelObject = new CSS3DObject(element);
     panelObject.position.fromArray(position);
-    panelObject.scale.setScalar(0.0038);
+    panelObject.scale.setScalar(0.0019);
     panelObject.userData.anchor = anchor;
     panelObject.userData.collapsedWidth = element.offsetWidth;
     panelObject.userData.collapsedHeight = element.offsetHeight;
@@ -250,7 +250,7 @@ function updateCornerPanelAnchors() {
 function updatePanelLayout() {
   const isCompact = window.innerWidth <= 760;
   const positions = getPanelBasePositions(isCompact);
-  const scale = isCompact ? 0.0032 : 0.0038;
+  const scale = isCompact ? 0.0016 : 0.0019;
 
   panelObjects.forEach((panelObject) => {
     const position = positions[panelObject.userData.anchor];

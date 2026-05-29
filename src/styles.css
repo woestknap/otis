@@ -30,8 +30,8 @@ canvas {
 
 .corner-panel {
   position: absolute;
-  width: 42px;
-  height: 42px;
+  width: 84px;
+  height: 84px;
   border: 1px solid rgba(255, 255, 255, 0.88);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
@@ -52,8 +52,8 @@ canvas {
 
 .corner-panel:hover,
 .corner-panel:focus-within {
-  width: min(270px, calc(100vw - 32px));
-  height: 140px;
+  width: 540px;
+  height: 280px;
   background: rgba(255, 255, 255, 0.96);
   border-color: rgba(147, 245, 255, 0.92);
   box-shadow:
@@ -65,8 +65,8 @@ canvas {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 10px;
-  height: 10px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
   background: #06111a;
   transform: translate(-50%, -50%);
@@ -82,8 +82,8 @@ canvas {
 }
 
 .corner-panel__content {
-  width: 270px;
-  padding: 16px;
+  width: 540px;
+  padding: 32px;
   opacity: 0;
   transform: translateY(8px);
   transition:
@@ -98,9 +98,9 @@ canvas {
 }
 
 .corner-panel h2 {
-  margin: 0 0 8px;
+  margin: 0 0 16px;
   color: #06111a;
-  font-size: 0.92rem;
+  font-size: 1.84rem;
   line-height: 1.15;
   letter-spacing: 0;
 }
@@ -108,24 +108,24 @@ canvas {
 .corner-panel p {
   margin: 0;
   color: rgba(6, 17, 26, 0.78);
-  font-size: 0.78rem;
+  font-size: 1.56rem;
   line-height: 1.45;
 }
 
 @media (max-width: 620px) {
   .corner-panel {
-    width: 36px;
-    height: 36px;
+    width: 72px;
+    height: 72px;
   }
 
   .corner-panel:hover,
   .corner-panel:focus-within {
-    width: min(234px, calc(100vw - 28px));
-    height: 135px;
+    width: 468px;
+    height: 270px;
   }
 
   .corner-panel__content {
-    width: 234px;
-    padding: 14px;
+    width: 468px;
+    padding: 28px;
   }
 }
