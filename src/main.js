@@ -24,6 +24,9 @@ let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
 
 document.addEventListener('mousemove', onDocumentMouseMove);
+document
+  .querySelector('[data-panel="base-station"]')
+  ?.addEventListener('mouseenter', onBaseStationPanelEnter);
 
 init();
 
@@ -76,6 +79,10 @@ function onWindowResize() {
 function onDocumentMouseMove(event) {
   mouseX = (event.clientX - windowHalfX) / windowHalfX;
   mouseY = (event.clientY - windowHalfY) / windowHalfY;
+}
+
+function onBaseStationPanelEnter() {
+  // Hook for the base-station-to-Otis connection animation.
 }
 
 function animate() {
