@@ -75,8 +75,8 @@ function onDocumentMouseMove(event) {
 }
 
 function animate() {
-  const yaw = mouseX * 0.34;
-  const pitch = -mouseY * 0.22;
+  const yaw = mouseX * 0.68;
+  const pitch = -mouseY * 0.44;
 
   targetCameraPosition.set(
     Math.sin(yaw) * Math.cos(pitch) * cameraRadius,
