@@ -220,15 +220,18 @@ function addCornerPanelsToScene() {
     panelObject.position.fromArray(position);
     panelObject.scale.setScalar(0.0038);
     panelObject.userData.anchor = anchor;
-    panelObject.userData.basePosition = panelObject.position.clone();
     panelObject.userData.collapsedWidth = element.offsetWidth;
     panelObject.userData.collapsedHeight = element.offsetHeight;
     panelObjects.push(panelObject);
     scene.add(panelObject);
   });
+
+  updatePanelLayout();
 }
 
 function updateCornerPanelAnchors() {
+  updatePanelLayout();
+
   panelObjects.forEach((panelObject) => {
     const element = panelObject.element;
     const deltaWidth = element.offsetWidth - panelObject.userData.collapsedWidth;
@@ -242,6 +245,36 @@ function updateCornerPanelAnchors() {
       panelObject.userData.basePosition.z
     );
   });
+}
+
+function updatePanelLayout() {
+  const isCompact = window.innerWidth <= 760;
+  const positions = getPanelBasePositions(isCompact);
+  const scale = isCompact ? 0.0032 : 0.0038;
+
+  panelObjects.forEach((panelObject) => {
+    const position = positions[panelObject.userData.anchor];
+    panelObject.scale.setScalar(scale);
+    panelObject.userData.basePosition = new THREE.Vector3(...position);
+  });
+}
+
+function getPanelBasePositions(isCompact) {
+  if (isCompact) {
+    return {
+      'top-left': [-0.46, 1.2, 0],
+      'top-right': [0.46, 1.2, 0],
+      'bottom-left': [-0.46, -1.08, 0],
+      'bottom-right': [0.46, -1.08, 0]
+    };
+  }
+
+  return {
+    'top-left': [-1.55, 0.92, 0],
+    'top-right': [1.55, 0.92, 0],
+    'bottom-left': [-1.55, -0.92, 0],
+    'bottom-right': [1.55, -0.92, 0]
+  };
 }
 
 function getPanelAnchorDirection(anchor) {
