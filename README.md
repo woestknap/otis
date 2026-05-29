@@ -2,7 +2,7 @@
 
 Small-step Three.js baseline for the Otis companion bot project.
 
-This version mirrors the official `webgl_effects_parallaxbarrier` example scene: reflective spheres, the Pisa cube skybox, and mouse-driven camera parallax. The only intentional change is rendering with the normal `WebGLRenderer` instead of `ParallaxBarrierEffect`, which removes the doubled/blurry stereo barrier output.
+This version keeps the official `webgl_effects_parallaxbarrier` example's simple mouse-driven camera parallax, but pares the scene down to one centered reflective sphere against a generated black-and-blue hologrid cube texture.
 
 ## Local Development
 
@@ -25,4 +25,4 @@ Cloudflare Pages can build this as a Vite static site:
 
 ## Next Steps
 
-Use this as the clean visual baseline before adding project-specific styling, sci-fi treatment, info planes, and the companion bot model.
+Use this as the clean visual baseline before adding project-specific styling, info planes, and the companion bot model.
