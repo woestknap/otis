@@ -14,6 +14,7 @@ let renderer;
 let cssRenderer;
 
 let model;
+let modelGlow;
 let logoPlane;
 let rotationAnimation = null;
 let isModelHovered = false;
@@ -46,6 +47,7 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animate);
+  renderer.domElement.className = 'webgl-layer';
   container.appendChild(renderer.domElement);
   renderer.domElement.addEventListener('click', onCanvasClick);
 
@@ -139,31 +141,9 @@ function updateModelHover(event) {
   isModelHovered = nextHoverState;
   renderer.domElement.style.cursor = isModelHovered ? 'pointer' : '';
 
-  if (!model) return;
-
-  model.traverse((child) => {
-    if (!child.isMesh || !child.material) return;
-
-    const materials = Array.isArray(child.material) ? child.material : [child.material];
-    materials.forEach((material) => {
-      if (!material.userData.originalEmissive && material.emissive) {
-        material.userData.originalEmissive = material.emissive.clone();
-        material.userData.originalEmissiveIntensity = material.emissiveIntensity ?? 1;
-      }
-
-      if (!material.emissive) return;
-
-      if (isModelHovered) {
-        material.emissive.set(0x48dfff);
-        material.emissiveIntensity = 0.16;
-      } else {
-        material.emissive.copy(material.userData.originalEmissive);
-        material.emissiveIntensity = material.userData.originalEmissiveIntensity;
-      }
-
-      material.needsUpdate = true;
-    });
-  });
+  if (modelGlow) {
+    modelGlow.material.opacity = isModelHovered ? 0.18 : 0;
+  }
 }
 
 function isPointerOnModel(event) {
@@ -287,9 +267,27 @@ function loadModel() {
     fitModelToScene(model, 1.05);
     model.rotation.y = -Math.PI / 2;
     scene.add(model);
+    addModelGlow();
   }, undefined, (error) => {
     console.error('Failed to load Otis GLB model.', error);
   });
+}
+
+function addModelGlow() {
+  const glowGeometry = new THREE.SphereGeometry(0.66, 48, 24);
+  const glowMaterial = new THREE.MeshBasicMaterial({
+    color: 0x48dfff,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.BackSide
+  });
+
+  modelGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+  modelGlow.position.copy(model.position);
+  modelGlow.scale.set(1.05, 1.28, 1.05);
+  scene.add(modelGlow);
 }
 
 function fitModelToScene(object, targetSize) {

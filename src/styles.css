@@ -21,10 +21,16 @@ canvas {
   display: block;
 }
 
+.webgl-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
 .css3d-layer {
   position: fixed;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
 }
 
