@@ -17,6 +17,7 @@ let model;
 let logoPlane;
 let rotationAnimation = null;
 const panelObjects = [];
+const mobileModelOffset = new THREE.Vector3(0.09, 0, 0);
 
 let mouseX = 0;
 let mouseY = 0;
@@ -249,7 +250,7 @@ function updateCornerPanelAnchors() {
 }
 
 function updatePanelLayout() {
-  const isCompact = window.innerWidth <= 760;
+  const isCompact = isPortraitMobileLayout();
   const positions = getPanelBasePositions(isCompact);
   const scale = isCompact ? 0.0016 : 0.0019;
 
@@ -263,10 +264,10 @@ function updatePanelLayout() {
 function getPanelBasePositions(isCompact) {
   if (isCompact) {
     return {
-      'top-left': [-0.42, 0.72, 0],
-      'top-right': [0.42, 0.72, 0],
-      'bottom-left': [-0.42, -0.46, 0],
-      'bottom-right': [0.42, -0.46, 0]
+      'top-left': [-0.7, 0.98, 0],
+      'top-right': [0.7, 0.98, 0],
+      'bottom-left': [-0.7, -0.84, 0],
+      'bottom-right': [0.7, -0.84, 0]
     };
   }
 
@@ -290,12 +291,20 @@ function getPanelAnchorDirection(anchor) {
 }
 
 function updateResponsiveSceneLayout() {
+  const isCompact = isPortraitMobileLayout();
+
+  if (model?.userData.basePosition) {
+    model.position.copy(model.userData.basePosition);
+
+    if (isCompact) {
+      model.position.add(mobileModelOffset);
+    }
+  }
+
   if (!logoPlane) return;
 
-  const isCompact = window.innerWidth <= 760;
-
   if (isCompact) {
-    logoPlane.position.set(-0.04, 0.5, 0);
+    logoPlane.position.set(0, 0.62, 0);
     logoPlane.scale.setScalar(0.78);
     return;
   }
@@ -327,7 +336,9 @@ function loadModel() {
     });
 
     fitModelToScene(model, 1.05);
+    model.userData.basePosition = model.position.clone();
     model.rotation.y = -Math.PI / 2;
+    updateResponsiveSceneLayout();
     scene.add(model);
   }, undefined, (error) => {
     console.error('Failed to load Otis GLB model.', error);
@@ -409,4 +420,8 @@ function seededRandom(value) {
 
 function easeOutCubic(value) {
   return 1 - Math.pow(1 - value, 3);
+}
+
+function isPortraitMobileLayout() {
+  return window.innerWidth <= 760 && window.innerHeight > window.innerWidth;
 }
