@@ -32,6 +32,7 @@ canvas {
   position: absolute;
   width: 84px;
   height: 84px;
+  transform: translate(-50%, -50%);
   border: 1px solid rgba(255, 255, 255, 0.88);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
@@ -48,6 +49,26 @@ canvas {
     background-color 220ms ease,
     border-color 220ms ease,
     box-shadow 220ms ease;
+}
+
+.corner-panel--top-left,
+.corner-panel--bottom-left {
+  left: 42px;
+}
+
+.corner-panel--top-right,
+.corner-panel--bottom-right {
+  right: -42px;
+}
+
+.corner-panel--top-left,
+.corner-panel--top-right {
+  top: 42px;
+}
+
+.corner-panel--bottom-left,
+.corner-panel--bottom-right {
+  bottom: -42px;
 }
 
 .corner-panel:hover,
@@ -116,6 +137,26 @@ canvas {
   .corner-panel {
     width: 72px;
     height: 72px;
+  }
+
+  .corner-panel--top-left,
+  .corner-panel--bottom-left {
+    left: 36px;
+  }
+
+  .corner-panel--top-right,
+  .corner-panel--bottom-right {
+    right: -36px;
+  }
+
+  .corner-panel--top-left,
+  .corner-panel--top-right {
+    top: 36px;
+  }
+
+  .corner-panel--bottom-left,
+  .corner-panel--bottom-right {
+    bottom: -36px;
   }
 
   .corner-panel:hover,

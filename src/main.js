@@ -87,6 +87,7 @@ function onWindowResize() {
 
   renderer.setSize(window.innerWidth, window.innerHeight);
   cssRenderer.setSize(window.innerWidth, window.innerHeight);
+  updatePanelLayout();
 }
 
 function onDocumentMouseMove(event) {
@@ -112,7 +113,6 @@ function animate() {
 
   camera.lookAt(scene.position);
 
-  updateCornerPanelAnchors();
   updateModelRotation();
 
   renderer.render(scene, camera);
@@ -220,31 +220,11 @@ function addCornerPanelsToScene() {
     panelObject.position.fromArray(position);
     panelObject.scale.setScalar(0.0019);
     panelObject.userData.anchor = anchor;
-    panelObject.userData.collapsedWidth = element.offsetWidth;
-    panelObject.userData.collapsedHeight = element.offsetHeight;
     panelObjects.push(panelObject);
     scene.add(panelObject);
   });
 
   updatePanelLayout();
-}
-
-function updateCornerPanelAnchors() {
-  updatePanelLayout();
-
-  panelObjects.forEach((panelObject) => {
-    const element = panelObject.element;
-    const deltaWidth = element.offsetWidth - panelObject.userData.collapsedWidth;
-    const deltaHeight = element.offsetHeight - panelObject.userData.collapsedHeight;
-    const scale = panelObject.scale.x;
-    const direction = getPanelAnchorDirection(panelObject.userData.anchor);
-
-    panelObject.position.set(
-      panelObject.userData.basePosition.x + direction.x * (deltaWidth * scale) / 2,
-      panelObject.userData.basePosition.y + direction.y * (deltaHeight * scale) / 2,
-      panelObject.userData.basePosition.z
-    );
-  });
 }
 
 function updatePanelLayout() {
@@ -275,17 +255,6 @@ function getPanelBasePositions(isCompact) {
     'bottom-left': [-1.55, -0.92, 0],
     'bottom-right': [1.55, -0.92, 0]
   };
-}
-
-function getPanelAnchorDirection(anchor) {
-  const directions = {
-    'top-left': { x: 1, y: -1 },
-    'top-right': { x: -1, y: -1 },
-    'bottom-left': { x: 1, y: 1 },
-    'bottom-right': { x: -1, y: 1 }
-  };
-
-  return directions[anchor] ?? { x: 0, y: 0 };
 }
 
 function loadModel() {
