@@ -271,11 +271,13 @@ function getPanelBasePositions(isCompact) {
     };
   }
 
+  const panelX = Math.min(1.55, getResponsivePanelX());
+
   return {
-    'top-left': [-1.55, 0.92, 0],
-    'top-right': [1.55, 0.92, 0],
-    'bottom-left': [-1.55, -0.92, 0],
-    'bottom-right': [1.55, -0.92, 0]
+    'top-left': [-panelX, 0.92, 0],
+    'top-right': [panelX, 0.92, 0],
+    'bottom-left': [-panelX, -0.92, 0],
+    'bottom-right': [panelX, -0.92, 0]
   };
 }
 
@@ -304,7 +306,7 @@ function updateResponsiveSceneLayout() {
   if (!logoPlane) return;
 
   if (isCompact) {
-    logoPlane.position.set(0, 0.62, 0);
+    logoPlane.position.set(0, 0.74, 0);
     logoPlane.scale.setScalar(0.78);
     return;
   }
@@ -424,4 +426,12 @@ function easeOutCubic(value) {
 
 function isPortraitMobileLayout() {
   return window.innerWidth <= 760 && window.innerHeight > window.innerWidth;
+}
+
+function getResponsivePanelX() {
+  if (!camera) return 1.55;
+
+  const verticalHalfView = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * cameraRadius;
+  const horizontalHalfView = verticalHalfView * camera.aspect;
+  return Math.max(0.78, horizontalHalfView - 0.28);
 }
