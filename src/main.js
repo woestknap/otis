@@ -112,6 +112,7 @@ function animate() {
 
   camera.lookAt(scene.position);
 
+  updateResponsiveSceneLayout();
   updateCornerPanelAnchors();
   updateModelRotation();
 
@@ -199,7 +200,7 @@ function addLogoPlane() {
     });
 
     logoPlane = new THREE.Mesh(geometry, material);
-    logoPlane.position.set(-0.06, 0.82, 0);
+    updateResponsiveSceneLayout();
     scene.add(logoPlane);
   });
 }
@@ -262,10 +263,10 @@ function updatePanelLayout() {
 function getPanelBasePositions(isCompact) {
   if (isCompact) {
     return {
-      'top-left': [-0.46, 1.2, 0],
-      'top-right': [0.46, 1.2, 0],
-      'bottom-left': [-0.46, -1.08, 0],
-      'bottom-right': [0.46, -1.08, 0]
+      'top-left': [-0.42, 0.98, 0],
+      'top-right': [0.42, 0.98, 0],
+      'bottom-left': [-0.42, -0.74, 0],
+      'bottom-right': [0.42, -0.74, 0]
     };
   }
 
@@ -286,6 +287,21 @@ function getPanelAnchorDirection(anchor) {
   };
 
   return directions[anchor] ?? { x: 0, y: 0 };
+}
+
+function updateResponsiveSceneLayout() {
+  if (!logoPlane) return;
+
+  const isCompact = window.innerWidth <= 760;
+
+  if (isCompact) {
+    logoPlane.position.set(-0.04, 0.68, 0);
+    logoPlane.scale.setScalar(0.86);
+    return;
+  }
+
+  logoPlane.position.set(-0.06, 0.82, 0);
+  logoPlane.scale.setScalar(1);
 }
 
 function loadModel() {
