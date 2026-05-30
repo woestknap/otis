@@ -263,10 +263,10 @@ function updatePanelLayout() {
 function getPanelBasePositions(isCompact) {
   if (isCompact) {
     return {
-      'top-left': [-0.42, 0.98, 0],
-      'top-right': [0.42, 0.98, 0],
-      'bottom-left': [-0.42, -0.74, 0],
-      'bottom-right': [0.42, -0.74, 0]
+      'top-left': [-0.42, 0.72, 0],
+      'top-right': [0.42, 0.72, 0],
+      'bottom-left': [-0.42, -0.46, 0],
+      'bottom-right': [0.42, -0.46, 0]
     };
   }
 
@@ -295,8 +295,8 @@ function updateResponsiveSceneLayout() {
   const isCompact = window.innerWidth <= 760;
 
   if (isCompact) {
-    logoPlane.position.set(-0.04, 0.68, 0);
-    logoPlane.scale.setScalar(0.86);
+    logoPlane.position.set(-0.04, 0.5, 0);
+    logoPlane.scale.setScalar(0.78);
     return;
   }
 
