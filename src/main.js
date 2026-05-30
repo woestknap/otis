@@ -29,7 +29,14 @@ const pointer = new THREE.Vector2();
 let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
 
-document.addEventListener('mousemove', onDocumentMouseMove);
+if (window.PointerEvent) {
+  document.addEventListener('pointerdown', onDocumentPointerMove, { passive: true });
+  document.addEventListener('pointermove', onDocumentPointerMove, { passive: true });
+} else {
+  document.addEventListener('mousemove', onDocumentPointerMove, { passive: true });
+  document.addEventListener('touchstart', onDocumentTouchMove, { passive: true });
+  document.addEventListener('touchmove', onDocumentTouchMove, { passive: true });
+}
 document
   .querySelector('[data-panel="base-station"]')
   ?.addEventListener('mouseenter', onBaseStationPanelEnter);
@@ -90,9 +97,21 @@ function onWindowResize() {
   cssRenderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function onDocumentMouseMove(event) {
-  mouseX = (event.clientX - windowHalfX) / windowHalfX;
-  mouseY = (event.clientY - windowHalfY) / windowHalfY;
+function onDocumentPointerMove(event) {
+  updateCameraInput(event.clientX, event.clientY);
+}
+
+function onDocumentTouchMove(event) {
+  const touch = event.touches[0];
+
+  if (!touch) return;
+
+  updateCameraInput(touch.clientX, touch.clientY);
+}
+
+function updateCameraInput(clientX, clientY) {
+  mouseX = (clientX - windowHalfX) / windowHalfX;
+  mouseY = (clientY - windowHalfY) / windowHalfY;
 }
 
 function onBaseStationPanelEnter() {
