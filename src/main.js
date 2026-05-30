@@ -263,10 +263,10 @@ function updatePanelLayout() {
 function getPanelBasePositions(isCompact) {
   if (isCompact) {
     return {
-      'top-left': [-1.32, 1.42, 0],
-      'top-right': [1.32, 1.42, 0],
-      'bottom-left': [-1.32, -1.42, 0],
-      'bottom-right': [1.32, -1.42, 0]
+      'top-left': [-0.42, 0.72, 0],
+      'top-right': [0.42, 0.72, 0],
+      'bottom-left': [-0.42, -0.46, 0],
+      'bottom-right': [0.42, -0.46, 0]
     };
   }
 
@@ -295,7 +295,7 @@ function updateResponsiveSceneLayout() {
   const isCompact = window.innerWidth <= 760;
 
   if (isCompact) {
-    logoPlane.position.set(-0.08, 0.5, 0);
+    logoPlane.position.set(-0.04, 0.5, 0);
     logoPlane.scale.setScalar(0.78);
     return;
   }
@@ -348,10 +348,6 @@ function fitModelToScene(object, targetSize) {
   const centeredBox = new THREE.Box3().setFromObject(object);
   const center = centeredBox.getCenter(new THREE.Vector3());
   object.position.sub(center);
-
-  if (window.innerWidth <= 760) {
-    object.position.x += 0.08;
-  }
 }
 
 function drawHologrid(ctx, width, height) {
