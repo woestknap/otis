@@ -2,7 +2,11 @@ import './styles.css';
 import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import otisModelUrl from './otis_shell_v2.glb?url';
 import otisLogoUrl from './otis_logo-06.svg?url';
@@ -16,12 +20,17 @@ const faceFrameUrls = Object.entries(faceFrameModules)
   .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
   .map(([, url]) => url);
 const faceSequenceFps = 30;
+const environmentHdriUrl = '/hdr/ninomaru_teien_1k.hdr';
+const dofAperture = 0.0056;
+const dofMaxBlur = 0.012;
 
 let container;
 let camera;
 let scene;
 let renderer;
 let cssRenderer;
+let composer;
+let bokehPass;
 
 let model;
 let logoPlane;
@@ -70,8 +79,11 @@ function init() {
   camera.position.z = cameraRadius;
 
   renderer = new THREE.WebGLRenderer();
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1;
   renderer.setAnimationLoop(animate);
   container.appendChild(renderer.domElement);
   renderer.domElement.addEventListener('click', onCanvasClick);
@@ -82,11 +94,11 @@ function init() {
   document.body.appendChild(cssRenderer.domElement);
 
   const hologridTexture = createHologridTexture();
-  const studioEnvironment = createStudioEnvironment();
 
   scene = new THREE.Scene();
   scene.background = hologridTexture;
-  scene.environment = studioEnvironment;
+  scene.environmentIntensity = 0.95;
+  loadEnvironmentLighting();
 
   scene.add(new THREE.AmbientLight(0x66eaff, 0.22));
 
@@ -97,6 +109,8 @@ function init() {
   const fillLight = new THREE.DirectionalLight(0x1d78ff, 0.35);
   fillLight.position.set(-4, 2, -3);
   scene.add(fillLight);
+
+  setupPostProcessing();
 
   addLogoPlane();
   addCornerPanelsToScene();
@@ -113,12 +127,12 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
 
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
   cssRenderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function onDocumentPointerMove(event) {
   updateCameraInput(event.clientX, event.clientY);
-  resumeFaceVideo();
 }
 
 function onDocumentTouchMove(event) {
@@ -127,7 +141,6 @@ function onDocumentTouchMove(event) {
   if (!touch) return;
 
   updateCameraInput(touch.clientX, touch.clientY);
-  resumeFaceVideo();
 }
 
 function updateCameraInput(clientX, clientY) {
@@ -157,8 +170,9 @@ function animate(time = 0) {
   updateCornerPanelAnchors();
   updateModelRotation();
   updateFaceSequence(time);
+  updateDepthOfFieldFocus();
 
-  renderer.render(scene, camera);
+  composer.render();
   cssRenderer.render(scene, camera);
 }
 
@@ -217,11 +231,45 @@ function createHologridTexture() {
   return texture;
 }
 
-function createStudioEnvironment() {
-  const pmremGenerator = new THREE.PMREMGenerator(renderer);
-  const environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmremGenerator.dispose();
-  return environment;
+function loadEnvironmentLighting() {
+  const loader = new HDRLoader();
+
+  loader.load(environmentHdriUrl, (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const environment = pmremGenerator.fromEquirectangular(texture).texture;
+    scene.environment = environment;
+
+    texture.dispose();
+    pmremGenerator.dispose();
+  }, undefined, (error) => {
+    console.error('Failed to load environment HDRI.', error);
+  });
+}
+
+function setupPostProcessing() {
+  composer = new EffectComposer(renderer);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  composer.addPass(new RenderPass(scene, camera));
+
+  bokehPass = new BokehPass(scene, camera, {
+    focus: cameraRadius,
+    aperture: dofAperture,
+    maxblur: dofMaxBlur
+  });
+  composer.addPass(bokehPass);
+  composer.addPass(new OutputPass());
+}
+
+function updateDepthOfFieldFocus() {
+  if (!bokehPass) return;
+
+  const focalPoint = model?.position ?? scene.position;
+  bokehPass.uniforms.focus.value = camera.position.distanceTo(focalPoint);
+  bokehPass.uniforms.aperture.value = dofAperture;
+  bokehPass.uniforms.maxblur.value = dofMaxBlur;
 }
 
 function addLogoPlane() {
