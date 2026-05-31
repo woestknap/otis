@@ -412,6 +412,7 @@ function configureFaceTexture(texture) {
   texture.rotation = faceSourceTexture.rotation;
   texture.wrapS = faceSourceTexture.wrapS;
   texture.wrapT = faceSourceTexture.wrapT;
+  texture.channel = faceSourceTexture.channel;
 }
 
 function updateFaceSequence(time) {
