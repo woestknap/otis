@@ -379,10 +379,14 @@ function applyFaceVideoMaterial(mesh) {
   if (!isFaceMesh) return;
 
   const videoTexture = getFaceVideoTexture();
+  material.color = new THREE.Color(0xffffff);
   material.map = videoTexture;
   material.emissiveMap = videoTexture;
   material.emissive = new THREE.Color(0xffffff);
-  material.emissiveIntensity = 1.25;
+  material.emissiveIntensity = 1.65;
+  material.roughness = 0.18;
+  material.metalness = 0;
+  material.toneMapped = false;
   material.needsUpdate = true;
 }
 
@@ -392,12 +396,25 @@ function getFaceVideoTexture() {
   faceVideo = document.createElement('video');
   faceVideo.src = faceVideoUrl;
   faceVideo.muted = true;
+  faceVideo.defaultMuted = true;
   faceVideo.loop = true;
   faceVideo.autoplay = true;
   faceVideo.playsInline = true;
   faceVideo.preload = 'auto';
+  faceVideo.crossOrigin = 'anonymous';
+  faceVideo.style.position = 'fixed';
+  faceVideo.style.left = '0';
+  faceVideo.style.bottom = '0';
+  faceVideo.style.width = '1px';
+  faceVideo.style.height = '1px';
+  faceVideo.style.opacity = '0';
+  faceVideo.style.pointerEvents = 'none';
+  faceVideo.setAttribute('muted', '');
   faceVideo.setAttribute('playsinline', '');
   faceVideo.setAttribute('webkit-playsinline', '');
+  faceVideo.addEventListener('loadeddata', resumeFaceVideo);
+  faceVideo.addEventListener('canplay', resumeFaceVideo);
+  document.body.appendChild(faceVideo);
 
   faceVideoTexture = new THREE.VideoTexture(faceVideo);
   faceVideoTexture.colorSpace = THREE.SRGBColorSpace;
@@ -405,6 +422,7 @@ function getFaceVideoTexture() {
   faceVideoTexture.minFilter = THREE.LinearFilter;
   faceVideoTexture.magFilter = THREE.LinearFilter;
 
+  faceVideo.load();
   resumeFaceVideo();
   return faceVideoTexture;
 }
