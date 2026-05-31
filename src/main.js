@@ -6,7 +6,6 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import otisModelUrl from './otis_shell_v2.glb?url';
 import otisLogoUrl from './otis_logo-06.svg?url';
-import faceVideoUrl from './anim_comp.mp4?url';
 
 let container;
 let camera;
@@ -16,10 +15,6 @@ let cssRenderer;
 
 let model;
 let logoPlane;
-let faceVideo;
-let faceCanvas;
-let faceCanvasContext;
-let faceTexture;
 let rotationAnimation = null;
 const panelObjects = [];
 const mobileModelOffset = new THREE.Vector3(0.09, 0, 0);
@@ -142,7 +137,6 @@ function animate() {
   updateResponsiveSceneLayout();
   updateCornerPanelAnchors();
   updateModelRotation();
-  updateFaceTexture();
 
   renderer.render(scene, camera);
   cssRenderer.render(scene, camera);
@@ -360,7 +354,6 @@ function loadModel() {
 
       if (child.material) {
         child.material.envMapIntensity = 1.05;
-        applyFaceVideoMaterial(child);
         child.material.needsUpdate = true;
       }
     });
@@ -373,135 +366,6 @@ function loadModel() {
   }, undefined, (error) => {
     console.error('Failed to load Otis GLB model.', error);
   });
-}
-
-function applyFaceVideoMaterial(mesh) {
-  const material = mesh.material;
-  const isFaceMesh = mesh.name === 'fafce' || material.name === 'Scratched black glass.002';
-
-  if (!isFaceMesh) return;
-
-  const videoTexture = getFaceTexture();
-  material.color = new THREE.Color(0xffffff);
-  material.map = videoTexture;
-  material.emissiveMap = videoTexture;
-  material.emissive = new THREE.Color(0xffffff);
-  material.emissiveIntensity = 1.65;
-  material.roughness = 0.18;
-  material.metalness = 0;
-  material.toneMapped = false;
-  material.needsUpdate = true;
-}
-
-function getFaceTexture() {
-  if (faceTexture) return faceTexture;
-
-  faceCanvas = document.createElement('canvas');
-  faceCanvas.width = 974;
-  faceCanvas.height = 974;
-  faceCanvasContext = faceCanvas.getContext('2d');
-  drawFaceFallback();
-
-  faceTexture = new THREE.CanvasTexture(faceCanvas);
-  faceTexture.colorSpace = THREE.SRGBColorSpace;
-  faceTexture.flipY = false;
-  faceTexture.minFilter = THREE.LinearFilter;
-  faceTexture.magFilter = THREE.LinearFilter;
-
-  faceVideo = document.createElement('video');
-  faceVideo.src = faceVideoUrl;
-  faceVideo.muted = true;
-  faceVideo.defaultMuted = true;
-  faceVideo.loop = true;
-  faceVideo.autoplay = true;
-  faceVideo.playsInline = true;
-  faceVideo.preload = 'auto';
-  faceVideo.crossOrigin = 'anonymous';
-  faceVideo.style.position = 'fixed';
-  faceVideo.style.left = '0';
-  faceVideo.style.bottom = '0';
-  faceVideo.style.width = '1px';
-  faceVideo.style.height = '1px';
-  faceVideo.style.opacity = '0';
-  faceVideo.style.pointerEvents = 'none';
-  faceVideo.setAttribute('muted', '');
-  faceVideo.setAttribute('playsinline', '');
-  faceVideo.setAttribute('webkit-playsinline', '');
-  faceVideo.addEventListener('loadedmetadata', onFaceVideoMetadata);
-  faceVideo.addEventListener('loadeddata', resumeFaceVideo);
-  faceVideo.addEventListener('canplay', resumeFaceVideo);
-  faceVideo.addEventListener('play', scheduleFaceVideoFrame);
-  document.body.appendChild(faceVideo);
-
-  faceVideo.load();
-  resumeFaceVideo();
-  return faceTexture;
-}
-
-function resumeFaceVideo() {
-  if (!faceVideo || !faceVideo.paused) return;
-
-  faceVideo.play().catch(() => {});
-}
-
-function onFaceVideoMetadata() {
-  if (!faceVideo) return;
-
-  if (faceVideo.currentTime === 0 && faceVideo.duration > 0.08) {
-    faceVideo.currentTime = 0.04;
-  }
-
-  resumeFaceVideo();
-}
-
-function scheduleFaceVideoFrame() {
-  if (!faceVideo || !('requestVideoFrameCallback' in faceVideo)) return;
-
-  faceVideo.requestVideoFrameCallback(() => {
-    updateFaceTexture();
-    scheduleFaceVideoFrame();
-  });
-}
-
-function updateFaceTexture() {
-  if (!faceVideo || !faceCanvas || !faceCanvasContext || !faceTexture) return;
-
-  if (faceVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || faceVideo.videoWidth === 0) {
-    return;
-  }
-
-  if (faceVideo.paused && faceVideo.currentTime < 0.03) {
-    return;
-  }
-
-  if (faceCanvas.width !== faceVideo.videoWidth || faceCanvas.height !== faceVideo.videoHeight) {
-    faceCanvas.width = faceVideo.videoWidth;
-    faceCanvas.height = faceVideo.videoHeight;
-  }
-
-  faceCanvasContext.drawImage(faceVideo, 0, 0, faceCanvas.width, faceCanvas.height);
-  faceTexture.needsUpdate = true;
-}
-
-function drawFaceFallback() {
-  if (!faceCanvasContext) return;
-
-  const width = faceCanvas.width;
-  const height = faceCanvas.height;
-
-  faceCanvasContext.fillStyle = '#111516';
-  faceCanvasContext.fillRect(0, 0, width, height);
-  faceCanvasContext.shadowColor = '#91f7ff';
-  faceCanvasContext.shadowBlur = 34;
-  faceCanvasContext.fillStyle = '#ffffff';
-  faceCanvasContext.fillRect(width * 0.29, height * 0.34, width * 0.15, height * 0.28);
-  faceCanvasContext.fillRect(width * 0.56, height * 0.34, width * 0.15, height * 0.28);
-  faceCanvasContext.beginPath();
-  faceCanvasContext.arc(width * 0.5, height * 0.62, width * 0.14, 0.18 * Math.PI, 0.82 * Math.PI);
-  faceCanvasContext.lineWidth = width * 0.055;
-  faceCanvasContext.lineCap = 'round';
-  faceCanvasContext.strokeStyle = '#ffffff';
-  faceCanvasContext.stroke();
 }
 
 function fitModelToScene(object, targetSize) {
