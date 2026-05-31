@@ -6,6 +6,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import otisModelUrl from './otis_shell_v2.glb?url';
 import otisLogoUrl from './otis_logo-06.svg?url';
+import faceVideoUrl from './anim_comp.mp4?url';
 
 let container;
 let camera;
@@ -15,6 +16,8 @@ let cssRenderer;
 
 let model;
 let logoPlane;
+let faceVideo;
+let faceVideoTexture;
 let rotationAnimation = null;
 const panelObjects = [];
 const mobileModelOffset = new THREE.Vector3(0.09, 0, 0);
@@ -99,6 +102,7 @@ function onWindowResize() {
 
 function onDocumentPointerMove(event) {
   updateCameraInput(event.clientX, event.clientY);
+  resumeFaceVideo();
 }
 
 function onDocumentTouchMove(event) {
@@ -107,6 +111,7 @@ function onDocumentTouchMove(event) {
   if (!touch) return;
 
   updateCameraInput(touch.clientX, touch.clientY);
+  resumeFaceVideo();
 }
 
 function updateCameraInput(clientX, clientY) {
@@ -352,6 +357,7 @@ function loadModel() {
 
       if (child.material) {
         child.material.envMapIntensity = 1.05;
+        applyFaceVideoMaterial(child);
         child.material.needsUpdate = true;
       }
     });
@@ -364,6 +370,49 @@ function loadModel() {
   }, undefined, (error) => {
     console.error('Failed to load Otis GLB model.', error);
   });
+}
+
+function applyFaceVideoMaterial(mesh) {
+  const material = mesh.material;
+  const isFaceMesh = mesh.name === 'fafce' || material.name === 'Scratched black glass.002';
+
+  if (!isFaceMesh) return;
+
+  const videoTexture = getFaceVideoTexture();
+  material.map = videoTexture;
+  material.emissiveMap = videoTexture;
+  material.emissive = new THREE.Color(0xffffff);
+  material.emissiveIntensity = 1.25;
+  material.needsUpdate = true;
+}
+
+function getFaceVideoTexture() {
+  if (faceVideoTexture) return faceVideoTexture;
+
+  faceVideo = document.createElement('video');
+  faceVideo.src = faceVideoUrl;
+  faceVideo.muted = true;
+  faceVideo.loop = true;
+  faceVideo.autoplay = true;
+  faceVideo.playsInline = true;
+  faceVideo.preload = 'auto';
+  faceVideo.setAttribute('playsinline', '');
+  faceVideo.setAttribute('webkit-playsinline', '');
+
+  faceVideoTexture = new THREE.VideoTexture(faceVideo);
+  faceVideoTexture.colorSpace = THREE.SRGBColorSpace;
+  faceVideoTexture.flipY = false;
+  faceVideoTexture.minFilter = THREE.LinearFilter;
+  faceVideoTexture.magFilter = THREE.LinearFilter;
+
+  resumeFaceVideo();
+  return faceVideoTexture;
+}
+
+function resumeFaceVideo() {
+  if (!faceVideo || !faceVideo.paused) return;
+
+  faceVideo.play().catch(() => {});
 }
 
 function fitModelToScene(object, targetSize) {
