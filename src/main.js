@@ -3,10 +3,6 @@ import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import otisModelUrl from './otis_shell_v2.glb?url';
 import otisLogoUrl from './otis_logo-06.svg?url';
@@ -21,16 +17,12 @@ const faceFrameUrls = Object.entries(faceFrameModules)
   .map(([, url]) => url);
 const faceSequenceFps = 30;
 const environmentHdriUrl = '/hdr/ninomaru_teien_1k.hdr';
-const dofAperture = 0.0024;
-const dofMaxBlur = 0.009;
 
 let container;
 let camera;
 let scene;
 let renderer;
 let cssRenderer;
-let composer;
-let bokehPass;
 
 let model;
 let logoPlane;
@@ -53,12 +45,6 @@ const cameraRadius = 3;
 const targetCameraPosition = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-const dofFocusTarget = new THREE.Vector2(0, 0);
-const dofIntersections = [];
-const dofModelBox = new THREE.Box3();
-const dofFocalPoint = new THREE.Vector3();
-const dofViewDirection = new THREE.Vector3();
-const dofCameraToFocus = new THREE.Vector3();
 
 let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
@@ -116,8 +102,6 @@ function init() {
   fillLight.position.set(-4, 2, -3);
   scene.add(fillLight);
 
-  setupPostProcessing();
-
   addLogoPlane();
   addCornerPanelsToScene();
   loadModel();
@@ -133,7 +117,6 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
 
   renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
   cssRenderer.setSize(window.innerWidth, window.innerHeight);
 }
 
@@ -177,9 +160,8 @@ function animate(time = 0) {
   updateCornerPanelAnchors();
   updateModelRotation();
   updateFaceSequence(time);
-  updateDepthOfFieldFocus();
 
-  composer.render();
+  renderer.render(scene, camera);
   cssRenderer.render(scene, camera);
 }
 
@@ -253,48 +235,6 @@ function loadEnvironmentLighting() {
   }, undefined, (error) => {
     console.error('Failed to load environment HDRI.', error);
   });
-}
-
-function setupPostProcessing() {
-  composer = new EffectComposer(renderer);
-  composer.setSize(window.innerWidth, window.innerHeight);
-  composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  composer.addPass(new RenderPass(scene, camera));
-
-  bokehPass = new BokehPass(scene, camera, {
-    focus: cameraRadius,
-    aperture: dofAperture,
-    maxblur: dofMaxBlur
-  });
-  composer.addPass(bokehPass);
-  composer.addPass(new OutputPass());
-}
-
-function updateDepthOfFieldFocus() {
-  if (!bokehPass) return;
-
-  bokehPass.uniforms.focus.value = getModelFocusDistance();
-  bokehPass.uniforms.aperture.value = dofAperture;
-  bokehPass.uniforms.maxblur.value = dofMaxBlur;
-}
-
-function getModelFocusDistance() {
-  if (!model) return cameraRadius;
-
-  raycaster.setFromCamera(dofFocusTarget, camera);
-  dofIntersections.length = 0;
-  raycaster.intersectObject(model, true, dofIntersections);
-
-  if (dofIntersections.length > 0) {
-    return dofIntersections[0].distance;
-  }
-
-  dofModelBox.setFromObject(model);
-  dofModelBox.getCenter(dofFocalPoint);
-  camera.getWorldDirection(dofViewDirection);
-  dofCameraToFocus.subVectors(dofFocalPoint, camera.position);
-
-  return Math.max(camera.near, dofCameraToFocus.dot(dofViewDirection));
 }
 
 function addLogoPlane() {
