@@ -7,6 +7,16 @@ import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer
 import otisModelUrl from './otis_shell_v2.glb?url';
 import otisLogoUrl from './otis_logo-06.svg?url';
 
+const faceFrameModules = import.meta.glob('./face_seq/*.{png,jpg,jpeg,webp}', {
+  eager: true,
+  import: 'default',
+  query: '?url'
+});
+const faceFrameUrls = Object.entries(faceFrameModules)
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+  .map(([, url]) => url);
+const faceSequenceFps = 30;
+
 let container;
 let camera;
 let scene;
@@ -15,9 +25,18 @@ let cssRenderer;
 
 let model;
 let logoPlane;
+let faceMaterial;
+let faceSourceTexture;
+let faceCanvas;
+let faceCanvasContext;
+let faceTexture;
+let faceSequenceFrame = -1;
+const faceImageCache = new Map();
 let rotationAnimation = null;
 const panelObjects = [];
 const mobileModelOffset = new THREE.Vector3(0.09, 0, 0);
+const faceSequencePrefetchCount = 24;
+const faceImageCacheLimit = 90;
 
 let mouseX = 0;
 let mouseY = 0;
@@ -120,7 +139,7 @@ function onBaseStationPanelEnter() {
   // Hook for the base-station-to-Otis connection animation.
 }
 
-function animate() {
+function animate(time = 0) {
   const yaw = mouseX * 0.54;
   const pitch = -mouseY * 0.3;
 
@@ -137,6 +156,7 @@ function animate() {
   updateResponsiveSceneLayout();
   updateCornerPanelAnchors();
   updateModelRotation();
+  updateFaceSequence(time);
 
   renderer.render(scene, camera);
   cssRenderer.render(scene, camera);
@@ -354,6 +374,7 @@ function loadModel() {
 
       if (child.material) {
         child.material.envMapIntensity = 1.05;
+        setupFaceSequenceMaterial(child);
         child.material.needsUpdate = true;
       }
     });
@@ -366,6 +387,111 @@ function loadModel() {
   }, undefined, (error) => {
     console.error('Failed to load Otis GLB model.', error);
   });
+}
+
+function setupFaceSequenceMaterial(mesh) {
+  const material = mesh.material;
+  const isFaceMesh = mesh.name === 'fafce' || material.name === 'Scratched black glass.002';
+
+  if (!isFaceMesh || faceFrameUrls.length === 0) return;
+
+  faceMaterial = material;
+  faceSourceTexture = material.map || material.emissiveMap || null;
+  prefetchFaceFrames(0);
+}
+
+function configureFaceTexture(texture) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = false;
+
+  if (!faceSourceTexture) return;
+
+  texture.offset.copy(faceSourceTexture.offset);
+  texture.repeat.copy(faceSourceTexture.repeat);
+  texture.center.copy(faceSourceTexture.center);
+  texture.rotation = faceSourceTexture.rotation;
+  texture.wrapS = faceSourceTexture.wrapS;
+  texture.wrapT = faceSourceTexture.wrapT;
+}
+
+function updateFaceSequence(time) {
+  if (!faceMaterial || faceFrameUrls.length === 0) return;
+
+  const nextFrame = Math.floor((time / 1000) * faceSequenceFps) % faceFrameUrls.length;
+  const nextImage = loadFaceFrameImage(nextFrame);
+  prefetchFaceFrames(nextFrame);
+
+  if (!nextImage.complete || nextImage.naturalWidth === 0 || nextFrame === faceSequenceFrame) return;
+
+  faceSequenceFrame = nextFrame;
+  drawFaceFrame(nextImage);
+}
+
+function prefetchFaceFrames(startFrame) {
+  for (let i = 0; i < faceSequencePrefetchCount; i += 1) {
+    loadFaceFrameImage((startFrame + i) % faceFrameUrls.length);
+  }
+
+  trimFaceImageCache(startFrame);
+}
+
+function loadFaceFrameImage(index) {
+  const cachedImage = faceImageCache.get(index);
+
+  if (cachedImage) return cachedImage;
+
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = faceFrameUrls[index];
+  image.addEventListener('load', () => {
+    if (index === faceSequenceFrame) {
+      drawFaceFrame(image);
+    }
+  });
+  image.addEventListener('error', (error) => {
+    console.error(`Failed to load face sequence frame ${index}.`, error);
+  });
+  faceImageCache.set(index, image);
+  return image;
+}
+
+function trimFaceImageCache(activeFrame) {
+  if (faceImageCache.size <= faceImageCacheLimit) return;
+
+  for (const [index] of faceImageCache) {
+    const forwardDistance = (index - activeFrame + faceFrameUrls.length) % faceFrameUrls.length;
+
+    if (forwardDistance < faceSequencePrefetchCount) continue;
+
+    faceImageCache.delete(index);
+
+    if (faceImageCache.size <= faceImageCacheLimit) return;
+  }
+}
+
+function drawFaceFrame(image) {
+  if (!faceCanvas) {
+    faceCanvas = document.createElement('canvas');
+    faceCanvasContext = faceCanvas.getContext('2d');
+  }
+
+  if (faceCanvas.width !== image.naturalWidth || faceCanvas.height !== image.naturalHeight) {
+    faceCanvas.width = image.naturalWidth;
+    faceCanvas.height = image.naturalHeight;
+  }
+
+  faceCanvasContext.drawImage(image, 0, 0, faceCanvas.width, faceCanvas.height);
+
+  if (!faceTexture) {
+    faceTexture = new THREE.CanvasTexture(faceCanvas);
+    configureFaceTexture(faceTexture);
+    faceMaterial.map = faceTexture;
+    faceMaterial.emissiveMap = faceTexture;
+    faceMaterial.needsUpdate = true;
+    return;
+  }
+
+  faceTexture.needsUpdate = true;
 }
 
 function fitModelToScene(object, targetSize) {
