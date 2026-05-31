@@ -21,8 +21,8 @@ const faceFrameUrls = Object.entries(faceFrameModules)
   .map(([, url]) => url);
 const faceSequenceFps = 30;
 const environmentHdriUrl = '/hdr/ninomaru_teien_1k.hdr';
-const dofAperture = 0.0056;
-const dofMaxBlur = 0.012;
+const dofAperture = 0.0024;
+const dofMaxBlur = 0.009;
 
 let container;
 let camera;
@@ -53,6 +53,12 @@ const cameraRadius = 3;
 const targetCameraPosition = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
+const dofFocusTarget = new THREE.Vector2(0, 0);
+const dofIntersections = [];
+const dofModelBox = new THREE.Box3();
+const dofFocalPoint = new THREE.Vector3();
+const dofViewDirection = new THREE.Vector3();
+const dofCameraToFocus = new THREE.Vector3();
 
 let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
@@ -165,6 +171,7 @@ function animate(time = 0) {
   camera.position.lerp(targetCameraPosition, 0.05).setLength(cameraRadius);
 
   camera.lookAt(scene.position);
+  camera.updateMatrixWorld();
 
   updateResponsiveSceneLayout();
   updateCornerPanelAnchors();
@@ -266,10 +273,28 @@ function setupPostProcessing() {
 function updateDepthOfFieldFocus() {
   if (!bokehPass) return;
 
-  const focalPoint = model?.position ?? scene.position;
-  bokehPass.uniforms.focus.value = camera.position.distanceTo(focalPoint);
+  bokehPass.uniforms.focus.value = getModelFocusDistance();
   bokehPass.uniforms.aperture.value = dofAperture;
   bokehPass.uniforms.maxblur.value = dofMaxBlur;
+}
+
+function getModelFocusDistance() {
+  if (!model) return cameraRadius;
+
+  raycaster.setFromCamera(dofFocusTarget, camera);
+  dofIntersections.length = 0;
+  raycaster.intersectObject(model, true, dofIntersections);
+
+  if (dofIntersections.length > 0) {
+    return dofIntersections[0].distance;
+  }
+
+  dofModelBox.setFromObject(model);
+  dofModelBox.getCenter(dofFocalPoint);
+  camera.getWorldDirection(dofViewDirection);
+  dofCameraToFocus.subVectors(dofFocalPoint, camera.position);
+
+  return Math.max(camera.near, dofCameraToFocus.dot(dofViewDirection));
 }
 
 function addLogoPlane() {
