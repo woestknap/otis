@@ -1,28 +1,33 @@
-# Otis Companion Bot Site Base
+# Otis — A little more alive
 
-Small-step Three.js baseline for the Otis companion bot project.
+An expressive product exploration for a companion robot in development. Built with Vite and Three.js, with no backend or API keys.
 
-This version keeps the official `webgl_effects_parallaxbarrier` example's simple mouse-driven camera parallax, but pares the scene down to one centered reflective sphere against a generated black-and-blue hologrid cube texture.
+## Run
 
-## Local Development
-
-```bash
+```sh
 npm install
 npm run dev
-```
-
-## Production Build
-
-```bash
 npm run build
+npm run preview
 ```
 
-Cloudflare Pages can build this as a Vite static site:
+Cloudflare Pages: build with `npm run build`, publish `dist`. Existing `wrangler.toml` configuration is retained.
 
-- Build command: `npm run build`
-- Build output directory: `dist`
-- Project config: `wrangler.toml`
+## Experience
 
-## Next Steps
+- Original GLB shell with a studio environment, pointer tracking, drag rotation, and keyboard-accessible spin control.
+- Three conceptual shell finishes and a separate interactive expression study.
+- Original MP4 face animation replaces hundreds of frame-image requests. Original frame sequences, model, logo, and source assets are preserved.
+- The Three.js portrait loads separately from the page. Animation and video pause when the portrait is offscreen or the document is hidden.
+- Reduced-motion preferences disable autonomous rotation and floating; explicit rotation changes remain available. A CSS portrait remains if WebGL fails.
+- Capability copy distinguishes the visible demo, planned features, and design concepts. Finishes are a visual study, not product availability.
 
-Use this as the clean visual baseline before adding project-specific styling, info planes, and the companion bot model.
+## Source
+
+- `index.html`: semantic content and controls
+- `src/styles.css`: responsive visual design
+- `src/main.js`: expression and finish controls, progressive portrait loading
+- `src/portrait.js`: Three.js scene and media lifecycle
+
+Typography uses Google Fonts with local system fallbacks. There are no analytics, forms, or microphone permission requests.
+

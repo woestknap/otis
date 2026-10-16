@@ -26,7 +26,9 @@ export async function initPortrait(stage, motion) {
   const pivot = new THREE.Group(); scene.add(pivot);
   const draco = new DRACOLoader(); draco.setDecoderPath('/draco/');
   const loader = new GLTFLoader().setDRACOLoader(draco);
-  const gltf = await loader.loadAsync(modelUrl);
+  let gltf;
+  try { gltf = await loader.loadAsync(modelUrl); }
+  catch (error) { draco.dispose(); environment.dispose(); renderer.dispose(); throw error; }
   draco.dispose();
   const model = gltf.scene;
   const box = new THREE.Box3().setFromObject(model);
@@ -106,4 +108,5 @@ export async function initPortrait(stage, motion) {
   updateActivity();
   return { spin, setFinish };
 }
+
 

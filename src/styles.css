@@ -12,3 +12,9 @@
 /* Larger touch targets without enlarging the finish chips. */
 .finishes>div{gap:0}.finishes button{position:relative;width:36px;height:36px;border:0;background:radial-gradient(circle,var(--swatch) 8px,transparent 9px);box-shadow:none!important}.finishes button[aria-pressed=true]:after{content:'';position:absolute;inset:6px;border:1px solid var(--ink);border-radius:50%}.finishes button:disabled{opacity:.4;cursor:wait}.text-button:disabled{opacity:.4;cursor:wait}.hero h1{letter-spacing:-.075em}
 @media(max-width:600px){.hero{height:800px}.stage{width:110%;right:-5%;top:43%;height:44%}.finishes{bottom:78px}.finishes button{width:44px;height:44px}.finishes button[aria-pressed=true]:after{inset:10px}.hero h1{letter-spacing:-.07em}.hero-bottom{height:60px}}
+[hidden]{display:none!important}
+@media(min-width:601px) and (max-width:900px){.stage{right:-2%}.scribble{display:none}.intro{grid-template-columns:22% 1fr}.intro-columns{gap:22px}.intro-columns p:first-child{font-size:20px}}
+@media(max-width:360px){.hero h1{font-size:58px}.hero{height:760px}.stage{top:44%;height:41%}.project-link span{margin-left:12px}.hero-bottom{letter-spacing:.6px}}
+/* Contain tilted orbit paths so decorative geometry cannot widen the page. */
+.stage{overflow:clip}
+@media(max-width:360px){.hero h1{font-size:50px}}
