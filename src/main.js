@@ -1,598 +1,125 @@
 import './styles.css';
-import * as THREE from 'three';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
-import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
-import otisModelUrl from './otis_shell_v2.glb?url';
-import otisLogoUrl from './otis_logo-06.svg?url';
 
-const faceFrameModules = import.meta.glob('./face_seq/*.{png,jpg,jpeg,webp}', {
-  eager: true,
-  import: 'default',
-  query: '?url'
+const stage = document.querySelector('#stage');
+const motion = matchMedia('(prefers-reduced-motion: reduce)');
+const captions = { curious: '“Oh. What\'s that?”', happy: '“You\'re here!”', sleepy: '“Just five more minutes.”' };
+let mood = 'curious';
+let spin = () => {};
+document.querySelectorAll('[data-mood][aria-pressed]').forEach(button => {
+  button.addEventListener('click', () => {
+    mood = button.dataset.mood;
+    document.querySelectorAll('[data-mood][aria-pressed]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    document.querySelector('.face').dataset.mood = mood;
+    document.querySelector('#mood-caption').textContent = captions[mood];
+  });
 });
-const faceFrameUrls = Object.entries(faceFrameModules)
-  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-  .map(([, url]) => url);
-const faceSequenceFps = 30;
-const environmentHdriUrl = '/hdr/ninomaru_teien_1k.hdr';
+document.querySelector('#turn').addEventListener('click', () => spin());
 
-let container;
-let camera;
-let scene;
-let renderer;
-let cssRenderer;
-
-let model;
-let logoPlane;
-let faceMaterial;
-let faceSourceTexture;
-let faceCanvas;
-let faceCanvasContext;
-let faceTexture;
-let faceSequenceFrame = -1;
-const faceImageCache = new Map();
-let rotationAnimation = null;
-const panelObjects = [];
-const mobileModelOffset = new THREE.Vector3(0.09, 0, 0);
-const faceSequencePrefetchCount = 24;
-const faceImageCacheLimit = 90;
-
-let mouseX = 0;
-let mouseY = 0;
-const cameraRadius = 3;
-const targetCameraPosition = new THREE.Vector3();
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-
-let windowHalfX = window.innerWidth / 2;
-let windowHalfY = window.innerHeight / 2;
-
-if (window.PointerEvent) {
-  document.addEventListener('pointerdown', onDocumentPointerMove, { passive: true });
-  document.addEventListener('pointermove', onDocumentPointerMove, { passive: true });
-} else {
-  document.addEventListener('mousemove', onDocumentPointerMove, { passive: true });
-  document.addEventListener('touchstart', onDocumentTouchMove, { passive: true });
-  document.addEventListener('touchmove', onDocumentTouchMove, { passive: true });
-}
-document
-  .querySelector('[data-panel="base-station"]')
-  ?.addEventListener('mouseenter', onBaseStationPanelEnter);
-
-init();
-
-function init() {
-  container = document.createElement('div');
-  document.body.appendChild(container);
-
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
-  camera.position.z = cameraRadius;
-
-  renderer = new THREE.WebGLRenderer();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+async function initPortrait() {
+  const THREE = await import('three');
+  const [{ GLTFLoader }, { DRACOLoader }, { RoomEnvironment }, { default: modelUrl }, { default: faceUrl }] = await Promise.all([
+    import('three/addons/loaders/GLTFLoader.js'), import('three/addons/loaders/DRACOLoader.js'),
+    import('three/addons/environments/RoomEnvironment.js'), import('./otis_shell_v2.glb?url'), import('./anim_comp.mp4?url')
+  ]);
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1;
-  renderer.setAnimationLoop(animate);
-  container.appendChild(renderer.domElement);
-  renderer.domElement.addEventListener('click', onCanvasClick);
-
-  cssRenderer = new CSS3DRenderer();
-  cssRenderer.setSize(window.innerWidth, window.innerHeight);
-  cssRenderer.domElement.className = 'css3d-layer';
-  document.body.appendChild(cssRenderer.domElement);
-
-  const hologridTexture = createHologridTexture();
-
-  scene = new THREE.Scene();
-  scene.background = hologridTexture;
-  scene.environmentIntensity = 0.95;
-  loadEnvironmentLighting();
-
-  scene.add(new THREE.AmbientLight(0x66eaff, 0.22));
-
-  const keyLight = new THREE.DirectionalLight(0x9af7ff, 0.7);
-  keyLight.position.set(3, 4, 5);
-  scene.add(keyLight);
-
-  const fillLight = new THREE.DirectionalLight(0x1d78ff, 0.35);
-  fillLight.position.set(-4, 2, -3);
-  scene.add(fillLight);
-
-  addLogoPlane();
-  addCornerPanelsToScene();
-  loadModel();
-
-  window.addEventListener('resize', onWindowResize);
-}
-
-function onWindowResize() {
-  windowHalfX = window.innerWidth / 2;
-  windowHalfY = window.innerHeight / 2;
-
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  cssRenderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-function onDocumentPointerMove(event) {
-  updateCameraInput(event.clientX, event.clientY);
-}
-
-function onDocumentTouchMove(event) {
-  const touch = event.touches[0];
-
-  if (!touch) return;
-
-  updateCameraInput(touch.clientX, touch.clientY);
-}
-
-function updateCameraInput(clientX, clientY) {
-  mouseX = (clientX - windowHalfX) / windowHalfX;
-  mouseY = (clientY - windowHalfY) / windowHalfY;
-}
-
-function onBaseStationPanelEnter() {
-  // Hook for the base-station-to-Otis connection animation.
-}
-
-function animate(time = 0) {
-  const yaw = mouseX * 0.54;
-  const pitch = -mouseY * 0.3;
-
-  targetCameraPosition.set(
-    Math.sin(yaw) * Math.cos(pitch) * cameraRadius,
-    Math.sin(pitch) * cameraRadius,
-    Math.cos(yaw) * Math.cos(pitch) * cameraRadius
-  );
-
-  camera.position.lerp(targetCameraPosition, 0.05).setLength(cameraRadius);
-
-  camera.lookAt(scene.position);
-  camera.updateMatrixWorld();
-
-  updateResponsiveSceneLayout();
-  updateCornerPanelAnchors();
-  updateModelRotation();
-  updateFaceSequence(time);
-
-  renderer.render(scene, camera);
-  cssRenderer.render(scene, camera);
-}
-
-function onCanvasClick(event) {
-  if (!model || rotationAnimation) return;
-
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(pointer, camera);
-
-  if (raycaster.intersectObject(model, true).length === 0) return;
-
-  rotationAnimation = {
-    from: model.rotation.y,
-    to: model.rotation.y + Math.PI,
-    startTime: performance.now(),
-    duration: 900
-  };
-}
-
-function updateModelRotation() {
-  if (!model || !rotationAnimation) return;
-
-  const elapsed = performance.now() - rotationAnimation.startTime;
-  const progress = Math.min(elapsed / rotationAnimation.duration, 1);
-  const easedProgress = easeOutCubic(progress);
-
-  model.rotation.y = THREE.MathUtils.lerp(
-    rotationAnimation.from,
-    rotationAnimation.to,
-    easedProgress
-  );
-
-  if (progress === 1) {
-    rotationAnimation = null;
-  }
-}
-
-function createHologridTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 2048;
-  canvas.height = 1024;
-
-  const ctx = canvas.getContext('2d');
-  drawHologrid(ctx, canvas.width, canvas.height);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.anisotropy = 8;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function loadEnvironmentLighting() {
-  const loader = new HDRLoader();
-
-  loader.load(environmentHdriUrl, (texture) => {
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const environment = pmremGenerator.fromEquirectangular(texture).texture;
-    scene.environment = environment;
-
-    texture.dispose();
-    pmremGenerator.dispose();
-  }, undefined, (error) => {
-    console.error('Failed to load environment HDRI.', error);
-  });
-}
-
-function addLogoPlane() {
-  const loader = new THREE.TextureLoader();
-
-  loader.load(otisLogoUrl, (texture) => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 8;
-
-    const aspect = texture.image.width / texture.image.height;
-    const logoHeight = 0.42;
-    const geometry = new THREE.PlaneGeometry(logoHeight * aspect, logoHeight);
-    const material = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    });
-
-    logoPlane = new THREE.Mesh(geometry, material);
-    updateResponsiveSceneLayout();
-    scene.add(logoPlane);
-  });
-}
-
-function addCornerPanelsToScene() {
-  const panelConfigs = [
-    ['.corner-panel--top-left', [-1.55, 0.92, 0], 'top-left'],
-    ['.corner-panel--top-right', [1.55, 0.92, 0], 'top-right'],
-    ['.corner-panel--bottom-left', [-1.55, -0.92, 0], 'bottom-left'],
-    ['.corner-panel--bottom-right', [1.55, -0.92, 0], 'bottom-right']
-  ];
-
-  panelConfigs.forEach(([selector, position, anchor]) => {
-    const element = document.querySelector(selector);
-    if (!element) return;
-
-    const panelObject = new CSS3DObject(element);
-    panelObject.position.fromArray(position);
-    panelObject.scale.setScalar(0.0019);
-    panelObject.userData.anchor = anchor;
-    panelObject.userData.collapsedWidth = element.offsetWidth;
-    panelObject.userData.collapsedHeight = element.offsetHeight;
-    panelObjects.push(panelObject);
-    scene.add(panelObject);
-  });
-
-  updatePanelLayout();
-}
-
-function updateCornerPanelAnchors() {
-  updatePanelLayout();
-
-  panelObjects.forEach((panelObject) => {
-    const element = panelObject.element;
-    const deltaWidth = element.offsetWidth - panelObject.userData.collapsedWidth;
-    const deltaHeight = element.offsetHeight - panelObject.userData.collapsedHeight;
-    const scale = panelObject.scale.x;
-    const direction = getPanelAnchorDirection(panelObject.userData.anchor);
-
-    panelObject.position.set(
-      panelObject.userData.basePosition.x + direction.x * (deltaWidth * scale) / 2,
-      panelObject.userData.basePosition.y + direction.y * (deltaHeight * scale) / 2,
-      panelObject.userData.basePosition.z
-    );
-  });
-}
-
-function updatePanelLayout() {
-  const isCompact = isPortraitMobileLayout();
-  const positions = getPanelBasePositions(isCompact);
-  const scale = isCompact ? 0.0016 : 0.0019;
-
-  panelObjects.forEach((panelObject) => {
-    const position = positions[panelObject.userData.anchor];
-    panelObject.scale.setScalar(scale);
-    panelObject.userData.basePosition = new THREE.Vector3(...position);
-  });
-}
-
-function getPanelBasePositions(isCompact) {
-  if (isCompact) {
-    return {
-      'top-left': [-0.7, 0.98, 0],
-      'top-right': [0.7, 0.98, 0],
-      'bottom-left': [-0.7, -0.84, 0],
-      'bottom-right': [0.7, -0.84, 0]
-    };
-  }
-
-  const panelX = Math.min(1.55, getResponsivePanelX());
-
-  return {
-    'top-left': [-panelX, 0.92, 0],
-    'top-right': [panelX, 0.92, 0],
-    'bottom-left': [-panelX, -0.92, 0],
-    'bottom-right': [panelX, -0.92, 0]
-  };
-}
-
-function getPanelAnchorDirection(anchor) {
-  const directions = {
-    'top-left': { x: 1, y: -1 },
-    'top-right': { x: -1, y: -1 },
-    'bottom-left': { x: 1, y: 1 },
-    'bottom-right': { x: -1, y: 1 }
-  };
-
-  return directions[anchor] ?? { x: 0, y: 0 };
-}
-
-function updateResponsiveSceneLayout() {
-  const isCompact = isPortraitMobileLayout();
-
-  if (model?.userData.basePosition) {
-    model.position.copy(model.userData.basePosition);
-
-    if (isCompact) {
-      model.position.add(mobileModelOffset);
-    }
-  }
-
-  if (!logoPlane) return;
-
-  if (isCompact) {
-    logoPlane.position.set(0, 0.74, 0);
-    logoPlane.scale.setScalar(0.78);
-    return;
-  }
-
-  logoPlane.position.set(-0.06, 0.82, 0);
-  logoPlane.scale.setScalar(1);
-}
-
-function loadModel() {
-  const dracoLoader = new DRACOLoader();
-  dracoLoader.setDecoderPath('/draco/');
-
-  const loader = new GLTFLoader();
-  loader.setDRACOLoader(dracoLoader);
-
-  loader.load(otisModelUrl, (gltf) => {
-    model = gltf.scene;
-
-    model.traverse((child) => {
-      if (!child.isMesh) return;
-
-      child.castShadow = true;
-      child.receiveShadow = true;
-
-      if (child.material) {
-        child.material.envMapIntensity = 1.05;
-        setupFaceSequenceMaterial(child);
-        child.material.needsUpdate = true;
-      }
-    });
-
-    fitModelToScene(model, 1.05);
-    model.userData.basePosition = model.position.clone();
-    model.rotation.y = -Math.PI / 2;
-    updateResponsiveSceneLayout();
-    scene.add(model);
-  }, undefined, (error) => {
-    console.error('Failed to load Otis GLB model.', error);
-  });
-}
-
-function setupFaceSequenceMaterial(mesh) {
-  const material = mesh.material;
-  const isFaceMesh = mesh.name === 'fafce' || material.name === 'Scratched black glass.002';
-
-  if (!isFaceMesh || faceFrameUrls.length === 0) return;
-
-  faceMaterial = material;
-  faceSourceTexture = material.map || material.emissiveMap || null;
-  prefetchFaceFrames(0);
-}
-
-function configureFaceTexture(texture) {
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.flipY = false;
-
-  if (!faceSourceTexture) return;
-
-  texture.offset.copy(faceSourceTexture.offset);
-  texture.repeat.copy(faceSourceTexture.repeat);
-  texture.center.copy(faceSourceTexture.center);
-  texture.rotation = faceSourceTexture.rotation;
-  texture.wrapS = faceSourceTexture.wrapS;
-  texture.wrapT = faceSourceTexture.wrapT;
-  texture.channel = faceSourceTexture.channel;
-}
-
-function updateFaceSequence(time) {
-  if (!faceMaterial || faceFrameUrls.length === 0) return;
-
-  const nextFrame = Math.floor((time / 1000) * faceSequenceFps) % faceFrameUrls.length;
-  const nextImage = loadFaceFrameImage(nextFrame);
-  prefetchFaceFrames(nextFrame);
-
-  if (!nextImage.complete || nextImage.naturalWidth === 0 || nextFrame === faceSequenceFrame) return;
-
-  faceSequenceFrame = nextFrame;
-  drawFaceFrame(nextImage);
-}
-
-function prefetchFaceFrames(startFrame) {
-  for (let i = 0; i < faceSequencePrefetchCount; i += 1) {
-    loadFaceFrameImage((startFrame + i) % faceFrameUrls.length);
-  }
-
-  trimFaceImageCache(startFrame);
-}
-
-function loadFaceFrameImage(index) {
-  const cachedImage = faceImageCache.get(index);
-
-  if (cachedImage) return cachedImage;
-
-  const image = new Image();
-  image.decoding = 'async';
-  image.src = faceFrameUrls[index];
-  image.addEventListener('load', () => {
-    if (index === faceSequenceFrame) {
-      drawFaceFrame(image);
-    }
-  });
-  image.addEventListener('error', (error) => {
-    console.error(`Failed to load face sequence frame ${index}.`, error);
-  });
-  faceImageCache.set(index, image);
-  return image;
-}
-
-function trimFaceImageCache(activeFrame) {
-  if (faceImageCache.size <= faceImageCacheLimit) return;
-
-  for (const [index] of faceImageCache) {
-    const forwardDistance = (index - activeFrame + faceFrameUrls.length) % faceFrameUrls.length;
-
-    if (forwardDistance < faceSequencePrefetchCount) continue;
-
-    faceImageCache.delete(index);
-
-    if (faceImageCache.size <= faceImageCacheLimit) return;
-  }
-}
-
-function drawFaceFrame(image) {
-  if (!faceCanvas) {
-    faceCanvas = document.createElement('canvas');
-    faceCanvasContext = faceCanvas.getContext('2d');
-  }
-
-  if (faceCanvas.width !== image.naturalWidth || faceCanvas.height !== image.naturalHeight) {
-    faceCanvas.width = image.naturalWidth;
-    faceCanvas.height = image.naturalHeight;
-  }
-
-  faceCanvasContext.drawImage(image, 0, 0, faceCanvas.width, faceCanvas.height);
-
-  if (!faceTexture) {
-    faceTexture = new THREE.CanvasTexture(faceCanvas);
-    configureFaceTexture(faceTexture);
-    faceMaterial.map = faceTexture;
-    faceMaterial.emissiveMap = faceTexture;
-    faceMaterial.needsUpdate = true;
-    return;
-  }
-
-  faceTexture.needsUpdate = true;
-}
-
-function fitModelToScene(object, targetSize) {
-  const box = new THREE.Box3().setFromObject(object);
+  renderer.toneMappingExposure = 1.5;
+  stage.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(34, 1, .01, 100);
+  camera.position.set(0, .25, 4.7);
+  camera.lookAt(0, 0, 0);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const room = new RoomEnvironment();
+  const environment = pmrem.fromScene(room, .04);
+  scene.environment = environment.texture;
+  room.dispose(); pmrem.dispose();
+  scene.add(new THREE.HemisphereLight(0xfff9e9, 0x52664d, 2));
+  const key = new THREE.DirectionalLight(0xfff5df, 4); key.position.set(-3, 5, 4); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xe8f2ce, 3); rim.position.set(3, 2, -3); scene.add(rim);
+  const pivot = new THREE.Group(); scene.add(pivot);
+  const draco = new DRACOLoader(); draco.setDecoderPath('/draco/');
+  const loader = new GLTFLoader().setDRACOLoader(draco);
+  const gltf = await loader.loadAsync(modelUrl);
+  draco.dispose();
+  const model = gltf.scene;
+  const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
-  const maxDimension = Math.max(size.x, size.y, size.z);
-
-  if (maxDimension > 0) {
-    object.scale.setScalar(targetSize / maxDimension);
+  model.scale.setScalar(1.9 / Math.max(size.x, size.y, size.z));
+  model.updateMatrixWorld(true);
+  model.position.sub(new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()));
+  pivot.add(model);
+  const video = document.createElement('video');
+  video.src = faceUrl; video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'auto';
+  const texture = new THREE.VideoTexture(video); texture.colorSpace = THREE.SRGBColorSpace; texture.flipY = false;
+  model.traverse(mesh => {
+    if (!mesh.isMesh) return;
+    const material = mesh.material;
+    if (mesh.name === 'fafce' || material.name === 'Scratched black glass.002') {
+      const source = material.map || material.emissiveMap;
+      if (source) {
+        texture.offset.copy(source.offset); texture.repeat.copy(source.repeat); texture.center.copy(source.center);
+        texture.rotation = source.rotation; texture.channel = source.channel;
+      }
+      // Retain the embedded face until the video has a decoded frame.
+      video.addEventListener('loadeddata', () => {
+        material.map = texture; material.emissiveMap = texture; material.emissiveIntensity = 1.8; material.needsUpdate = true;
+        renderOnce();
+      }, { once: true });
+      material.emissiveIntensity = 1.8;
+    } else {
+      material.color.set('#b5b8a5'); material.roughness = .32; material.metalness = .12;
+    }
+  });
+  pivot.rotation.set(.08, -Math.PI / 2 - .32, -.10);
+  stage.classList.add('ready');
+  let visible = true;
+  let yaw = 0, targetYaw = 0, targetX = 0, targetY = 0;
+  let down = false, startX = 0, initialYaw = 0;
+  const baseYaw = -Math.PI / 2 - .32;
+  const canvas = renderer.domElement;
+  function renderOnce() { renderer.render(scene, camera); }
+  function resize() {
+    const { width, height } = stage.getBoundingClientRect();
+    renderer.setSize(width, height); camera.aspect = width / height; camera.updateProjectionMatrix(); renderOnce();
   }
-
-  object.updateMatrixWorld(true);
-
-  const centeredBox = new THREE.Box3().setFromObject(object);
-  const center = centeredBox.getCenter(new THREE.Vector3());
-  object.position.sub(center);
-}
-
-function drawHologrid(ctx, width, height) {
-  const centerX = width / 2;
-  const centerY = height / 2;
-
-  const glow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, width * 0.48);
-  glow.addColorStop(0, '#041b2a');
-  glow.addColorStop(0.42, '#010814');
-  glow.addColorStop(1, '#000208');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, width, height);
-
-  drawWrappedVerticalLines(ctx, width, height, 64, 'rgba(36, 214, 255, 0.27)', 1);
-  drawWrappedVerticalLines(ctx, width, height, 256, 'rgba(81, 246, 255, 0.48)', 2);
-  drawHorizontalLines(ctx, width, height, 64, 'rgba(36, 214, 255, 0.24)', 1);
-  drawHorizontalLines(ctx, width, height, 256, 'rgba(81, 246, 255, 0.44)', 2);
-
-  const seed = 42;
-  for (let i = 0; i < 140; i += 1) {
-    const randomA = seededRandom(seed + i * 2);
-    const randomB = seededRandom(seed + i * 2 + 1);
-    const x = randomA * width;
-    const y = randomB * height;
-    const alpha = 0.18 + seededRandom(seed + i * 3 + 2) * 0.42;
-    ctx.fillStyle = `rgba(71, 231, 255, ${alpha})`;
-    ctx.fillRect(x, y, 1.5, 1.5);
+  const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(stage); resize();
+  canvas.addEventListener('pointerdown', event => { down = true; startX = event.clientX; initialYaw = targetYaw; canvas.setPointerCapture(event.pointerId); });
+  canvas.addEventListener('pointermove', event => {
+    const rect = stage.getBoundingClientRect();
+    if (down) targetYaw = initialYaw + (event.clientX - startX) * .009;
+    else { targetX = ((event.clientX - rect.left) / rect.width - .5) * .22; targetY = ((event.clientY - rect.top) / rect.height - .5) * .12; }
+    if (motion.matches) { yaw = targetYaw; pivot.rotation.y = baseYaw + yaw; renderOnce(); }
+  });
+  const release = () => { down = false; };
+  canvas.addEventListener('pointerup', release); canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointerleave', () => { targetX = 0; targetY = 0; });
+  spin = () => {
+    targetYaw += Math.PI * 2;
+    if (motion.matches) { targetYaw += Math.PI / 2; yaw = targetYaw; pivot.rotation.y = baseYaw + yaw; renderOnce(); }
+  };
+  function frame(time) {
+    yaw += (targetYaw - yaw) * .065;
+    pivot.rotation.y = baseYaw + yaw + targetX;
+    pivot.rotation.x += (.08 + targetY - pivot.rotation.x) * .06;
+    pivot.position.y = Math.sin(time * .0011) * .045;
+    pivot.rotation.z = -.10 + Math.sin(time * .0008) * .025;
+    renderer.render(scene, camera);
   }
-}
-
-function drawWrappedVerticalLines(ctx, width, height, step, color, lineWidth) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
-
-  for (let x = step / 2; x < width; x += step) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
+  function updateActivity() {
+    const active = visible && !document.hidden && !motion.matches;
+    renderer.setAnimationLoop(active ? frame : null);
+    if (active) video.play().catch(() => {}); else { video.pause(); renderOnce(); }
   }
+  new IntersectionObserver(entries => { visible = entries[0].isIntersecting; updateActivity(); }, { rootMargin: '80px' }).observe(stage);
+  document.addEventListener('visibilitychange', updateActivity);
+  motion.addEventListener('change', updateActivity);
+  updateActivity();
 }
-
-function drawHorizontalLines(ctx, width, height, step, color, lineWidth) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
-
-  for (let y = step / 2; y < height; y += step) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
-  }
-}
-
-function seededRandom(value) {
-  const x = Math.sin(value) * 10000;
-  return x - Math.floor(x);
-}
-
-function easeOutCubic(value) {
-  return 1 - Math.pow(1 - value, 3);
-}
-
-function isPortraitMobileLayout() {
-  return window.innerWidth <= 760 && window.innerHeight > window.innerWidth;
-}
-
-function getResponsivePanelX() {
-  if (!camera) return 1.55;
-
-  const verticalHalfView = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * cameraRadius;
-  const horizontalHalfView = verticalHalfView * camera.aspect;
-  return Math.max(0.78, horizontalHalfView - 0.28);
-}
+initPortrait().catch(error => {
+  console.warn('Otis portrait unavailable:', error);
+  document.querySelector('#loading').textContent = 'A little portrait of Otis';
+  document.querySelector('#turn').hidden = true;
+});
