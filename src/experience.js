@@ -16,7 +16,7 @@ function update() {
   state.progress = index + part;
   const near = Math.min(3,Math.floor(state.progress + .45));
   const blend = part * part * (3 - 2 * part);
-  const bg = themes[index].map((n,i)=>Math.round(n + ((themes[Math.min(3,index+1)][i])-n)*blend));
+  const bg = state.still ? themes[near] : themes[index].map((n,i)=>Math.round(n + ((themes[Math.min(3,index+1)][i])-n)*blend));
   const dark = state.progress > 1.55 && state.progress < 2.55;
   root.style.setProperty('--surface',`rgb(${bg.join(',')})`);
   root.style.setProperty('--ink',dark?'#edf0e3':'#273129');
@@ -26,6 +26,7 @@ function update() {
   root.style.setProperty('--progress',Math.min(1,scrollY/(document.documentElement.scrollHeight-innerHeight)));
   document.querySelector('#coordinate').textContent=(state.progress*33.33).toFixed(2).padStart(5,'0');
   document.querySelector('#chapter-name').textContent=names[near];
+  document.querySelector('#loading').textContent=near===3?'A LITTLE MORE COMPANY':near===0?'SCROLL TO ENTER ↓':'KEEP EXPLORING ↓';
   links.forEach((link,i)=>i===near?link.setAttribute('aria-current','step'):link.removeAttribute('aria-current'));
   chapters.forEach((el,i)=>{
     const content=el.querySelector('.chapter-content');
@@ -52,3 +53,4 @@ import('./world.js').then(({createWorld})=>createWorld(document.querySelector('#
   document.querySelector('#hello-action').addEventListener('click',()=>{controls.hello();document.querySelector('#response').textContent='“Oh! There you are.”';});
   requestUpdate();
 }).catch(error=>{console.warn('Spatial portrait unavailable',error);document.querySelector('#world canvas')?.remove();document.querySelector('#loading').textContent='SCROLL TO EXPLORE ↓';document.querySelector('.finishes').hidden=true;document.querySelector('#hello-action').hidden=true;});
+

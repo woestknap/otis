@@ -1,8 +1,8 @@
-# Otis — A little more alive
+# Otis — A small world, with you in it
 
-An expressive product exploration for a companion robot in development. Built with Vite and Three.js, with no backend or API keys.
+A continuous spatial encounter with a companion robot in development. Scrolling drives a Three.js camera through four connected states: encounter, curiosity, possibility, and company. The same character remains present throughout.
 
-## Run
+## Run and deploy
 
 ```sh
 npm install
@@ -11,23 +11,25 @@ npm run build
 npm run preview
 ```
 
-Cloudflare Pages: build with `npm run build`, publish `dist`. Existing `wrangler.toml` configuration is retained.
+Cloudflare Pages: `npm run build`, output `dist`. No backend, API keys, or new dependencies. The existing Cloudflare configuration is unchanged.
 
-## Experience
+## Interaction
 
-- Original GLB shell with a studio environment, pointer tracking, drag rotation, and keyboard-accessible spin control.
-- Three conceptual shell finishes and a separate interactive expression study.
-- Original MP4 face animation replaces hundreds of frame-image requests. Original frame sequences, model, logo, and source assets are preserved.
-- The Three.js portrait loads separately from the page. Animation and video pause when the portrait is offscreen or the document is hidden.
-- Reduced-motion preferences disable autonomous rotation and floating; explicit rotation changes remain available. A CSS portrait remains if WebGL fails.
-- Capability copy distinguishes the visible demo, planned features, and design concepts. Finishes are a visual study, not product availability.
+- Native page scrolling controls camera travel, real depth parallax, orbit geometry, lighting, and shell separation.
+- Pointer movement shifts the camera and Otis's gaze. “Say hello” triggers a head wobble and a spatial ripple.
+- The shell-study chapter offers three conceptual finishes. These are visual explorations, not availability claims.
+- Persistent chapter navigation works with keyboard and touch, without wheel interception or scroll locking.
+- Still mode respects the system reduced-motion preference and can be toggled explicitly. It pauses ambient animation/video and uses discrete camera compositions rather than animated camera travel.
+- Mobile uses a different camera composition calculated from the viewport aspect ratio.
+- A CSS portrait and semantic text remain if the 3D module fails. Rendering and video pause when the browser tab is hidden.
 
 ## Source
 
-- `index.html`: semantic content and controls
-- `src/styles.css`: responsive visual design
-- `src/main.js`: expression and finish controls, progressive portrait loading
-- `src/portrait.js`: Three.js scene and media lifecycle
+- `index.html`: accessible chapter content and persistent navigation
+- `src/experience.js`: scroll state, theme transitions, controls
+- `src/experience.css`: spatial overlay compositions and responsive styles
+- `src/world.js`: Three.js environment, camera path, original model and video
 
-Typography uses Google Fonts with local system fallbacks. There are no analytics, forms, or microphone permission requests.
+The earlier landing page's JS/CSS modules and all original model, image-sequence, video, and logo assets remain preserved. Git commit `267ab8b` contains the earlier complete design.
 
+Typography uses Google Fonts with system fallbacks. There are no analytics, forms, or microphone permission requests. Planned robot capabilities are explicitly labeled.

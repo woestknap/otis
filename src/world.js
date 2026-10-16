@@ -37,6 +37,10 @@ export async function createWorld(host, state) {
     const arc=new THREE.Mesh(new THREE.TorusGeometry(1.65+i*.22,.006,4,128),orbitMaterial);
     arc.rotation.set(Math.PI/2+i*.35,i*.7,.3+i*.3);orbit.add(arc);
   }
+  // A greeting travels outward through the same physical space as the character.
+  const greetingMaterial = new THREE.MeshBasicMaterial({color:0xd5f68a,transparent:true,opacity:0,depthWrite:false});
+  const greeting = new THREE.Mesh(new THREE.TorusGeometry(1,.018,6,96),greetingMaterial);
+  scene.add(greeting);
   const particles=new Float32Array(100*3);
   for(let i=0;i<100;i++){particles[i*3]=Math.sin(i*127.1)*9;particles[i*3+1]=Math.cos(i*73.7)*5;particles[i*3+2]=-2-(i%23);}
   const pointGeometry=new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(particles,3));
@@ -75,7 +79,7 @@ export async function createWorld(host, state) {
   const destinations=[new THREE.Vector3(1.25,0,0),new THREE.Vector3(1.1,0,0),new THREE.Vector3(-1.45,-.1,0),new THREE.Vector3(1.3,0,0)];
   function draw(time){
     const dt=Math.min((time-last)/1000,.05)||.016;last=time;
-    progress=state.still?state.progress:THREE.MathUtils.damp(progress,state.progress,5,dt);
+    progress=state.still?Math.round(state.progress):THREE.MathUtils.damp(progress,state.progress,5,dt);
     const segment=Math.min(2,Math.floor(progress));
     const t=THREE.MathUtils.smoothstep(progress-segment,0,1);
     const mobile=innerWidth<=600;
@@ -92,6 +96,11 @@ export async function createWorld(host, state) {
     // Keep the face oriented toward the travelling camera, with a curious head tilt.
     pivot.rotation.set(.06+open*.12,-Math.PI/2+Math.atan2(cameraPos.x-target.x,cameraPos.z)-.1+(state.still?0:state.pointerX*.10),-.08+helloWave);
     if(roof)roof.position.y=roofY+open*.46/model.scale.x;
+    greeting.position.copy(target);
+    greeting.quaternion.copy(camera.quaternion);
+    const pulse = Math.min(1, Math.max(0, helloAge / 1.8));
+    greeting.scale.setScalar(.9 + pulse * 2.4);
+    greetingMaterial.opacity = !state.still && helloAge < 1.8 ? (1 - pulse) * .65 : 0;
     orbit.position.copy(target);orbit.rotation.set(.1,progress*.7,state.still?0:time*.00006);
     orbit.scale.setScalar(mobile?.78:1);
     orbitMaterial.opacity=.08+Math.sin(Math.min(progress,3)*Math.PI/3)*.4;
@@ -99,7 +108,7 @@ export async function createWorld(host, state) {
     field.rotation.z=progress*.055;
     const night=Math.exp(-Math.pow((progress-2)*2.1,2));
     wire.color.set(night>.45?'#b3d9ad':'#6e8269');pointMaterial.color.copy(wire.color);
-    floor.material.opacity=.06+(1-night)*.06;
+    floor.material.opacity=.035+(1-night)*.035;
     ambient.intensity=1.2-night*.7;rim.intensity=2+night*2;
     renderer.render(scene,camera);
   }
@@ -110,4 +119,5 @@ export async function createWorld(host, state) {
   resize();activity();
   return {update(){if(state.still)draw(performance.now());},activity,finish(color){shell.forEach(material=>material.color.set(color));draw(performance.now());},hello(){helloAt=performance.now();if(state.still){pivot.rotation.z=.1;renderer.render(scene,camera);}}};
 }
+
 
