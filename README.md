@@ -1,28 +1,35 @@
-# Otis Companion Bot Site Base
+# Otis — A small world, with you in it
 
-Small-step Three.js baseline for the Otis companion bot project.
+A continuous spatial encounter with a companion robot in development. Scrolling drives a Three.js camera through four connected states: encounter, curiosity, possibility, and company. The same character remains present throughout.
 
-This version keeps the official `webgl_effects_parallaxbarrier` example's simple mouse-driven camera parallax, but pares the scene down to one centered reflective sphere against a generated black-and-blue hologrid cube texture.
+## Run and deploy
 
-## Local Development
-
-```bash
+```sh
 npm install
 npm run dev
-```
-
-## Production Build
-
-```bash
 npm run build
+npm run preview
 ```
 
-Cloudflare Pages can build this as a Vite static site:
+Cloudflare Pages: `npm run build`, output `dist`. No backend, API keys, or new dependencies. The existing Cloudflare configuration is unchanged.
 
-- Build command: `npm run build`
-- Build output directory: `dist`
-- Project config: `wrangler.toml`
+## Interaction
 
-## Next Steps
+- Native page scrolling controls camera travel, real depth parallax, orbit geometry, lighting, and shell separation.
+- Pointer movement shifts the camera and Otis's gaze. “Say hello” triggers a head wobble and a spatial ripple.
+- The shell-study chapter offers three conceptual finishes. These are visual explorations, not availability claims.
+- Persistent chapter navigation works with keyboard and touch, without wheel interception or scroll locking.
+- Still mode respects the system reduced-motion preference and can be toggled explicitly. It pauses ambient animation/video and uses discrete camera compositions rather than animated camera travel.
+- Mobile uses a different camera composition calculated from the viewport aspect ratio.
+- A CSS portrait and semantic text remain if the 3D module fails. Rendering and video pause when the browser tab is hidden.
 
-Use this as the clean visual baseline before adding project-specific styling, info planes, and the companion bot model.
+## Source
+
+- `index.html`: accessible chapter content and persistent navigation
+- `src/experience.js`: scroll state, theme transitions, controls
+- `src/experience.css`: spatial overlay compositions and responsive styles
+- `src/world.js`: Three.js environment, camera path, original model and video
+
+The earlier landing page's JS/CSS modules and all original model, image-sequence, video, and logo assets remain preserved. Git commit `267ab8b` contains the earlier complete design.
+
+Typography uses Google Fonts with system fallbacks. There are no analytics, forms, or microphone permission requests. Planned robot capabilities are explicitly labeled.

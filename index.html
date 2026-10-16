@@ -1,43 +1,18 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Otis the companion bot"
-    />
-    <title>Otis - Companion bot</title>
-  </head>
-  <body>
-    <aside class="corner-panel corner-panel--top-left" aria-label="Otis features">
-      <span class="corner-panel__dot" aria-hidden="true"></span>
-      <div class="corner-panel__content">
-        <h2>Otis features</h2>
-        <p>Expressive companion shell with room for sensors, light, touch, and playful interaction states.</p>
-      </div>
-    </aside>
-    <aside class="corner-panel corner-panel--top-right" aria-label="Keychain hole">
-      <span class="corner-panel__dot" aria-hidden="true"></span>
-      <div class="corner-panel__content">
-        <h2>Keychain hole</h2>
-        <p>A small carry point built into the shell for attaching Otis to a bag, keyring, or display loop.</p>
-      </div>
-    </aside>
-    <aside class="corner-panel corner-panel--bottom-left" data-panel="base-station" aria-label="Base station">
-      <span class="corner-panel__dot" aria-hidden="true"></span>
-      <div class="corner-panel__content">
-        <h2>Base station</h2>
-        <p>Docking concept for charging, pairing, and the upcoming connection animation between Otis and the base.</p>
-      </div>
-    </aside>
-    <aside class="corner-panel corner-panel--bottom-right" aria-label="Touch button">
-      <span class="corner-panel__dot" aria-hidden="true"></span>
-      <div class="corner-panel__content">
-        <h2>Touch button</h2>
-        <p>Primary tactile input for waking Otis, confirming actions, and starting simple interaction loops.</p>
-      </div>
-    </aside>
-    <script type="module" src="/src/main.js"></script>
-  </body>
-</html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e9e8df"><meta name="description" content="Step into the orbit of Otis. An interactive encounter with a little companion robot in the making."><link rel="icon" href="/favicon.svg"><title>Otis — A small world, with you in it.</title></head>
+<body>
+<a class="skip" href="#encounter">Skip to the encounter</a>
+<div id="world" aria-hidden="true"><div class="fallback"><div class="fallback-face">ı ı</div></div></div>
+<div class="vignette" aria-hidden="true"></div>
+<header class="hud"><a class="logo" href="#encounter" aria-label="Otis home">otis<span>✳</span></a><span class="hud-note">AN EXPERIMENT IN COMPANY</span><button id="motion" aria-pressed="false">Still mode <span>○</span></button></header>
+<main>
+<section id="encounter" class="chapter" data-chapter="0" aria-labelledby="hello"><div class="chapter-content opening"><span class="eyebrow">001 / SOMETHING SMALL IS HERE</span><h1 id="hello">Oh.<br><em>Hello.</em></h1><p>A little robot.<br>A world that gets bigger with you in it.</p><a class="enter" href="#gravity">Come a little closer <span>↓</span></a></div><span class="world-label">OTIS / COMPANION ROBOT IN DEVELOPMENT</span></section>
+<section id="gravity" class="chapter" data-chapter="1" aria-labelledby="curiosity"><div class="chapter-content left"><span class="eyebrow">002 / YOU HAVE ITS ATTENTION</span><h2 id="curiosity">Curiosity<br>has <em>gravity.</em></h2><p>Move around. Otis is looking back.<br>Even a small presence can change<br>the feeling of a space.</p><button class="action" id="hello-action" disabled>Say hello <span>↗</span></button><span class="response" id="response" aria-live="polite">An animated encounter. No microphone needed.</span></div></section>
+<section id="inside" class="chapter" data-chapter="2" aria-labelledby="becoming"><div class="chapter-content right"><span class="eyebrow">003 / A CHARACTER, STILL BECOMING</span><h2 id="becoming">A little<br><em>possibility.</em></h2><p>An expressive face. A modular shell.<br>Space for a personality to grow.</p><p class="fine">Voice, AI conversation, and movement awareness are planned capabilities. This is a visual exploration of the idea.</p><div class="finishes" role="group" aria-label="Concept shell finish"><button disabled data-color="#b5b8a5" aria-label="Chalk finish" aria-pressed="true" style="--chip:#b5b8a5"></button><button disabled data-color="#566954" aria-label="Moss finish" aria-pressed="false" style="--chip:#566954"></button><button disabled data-color="#c17455" aria-label="Clay finish" aria-pressed="false" style="--chip:#c17455"></button><span>IMAGINE THE OUTSIDE</span></div></div></section>
+<section id="company" class="chapter" data-chapter="3" aria-labelledby="company-title"><div class="chapter-content closing"><span class="eyebrow">004 / BACK TO THE EVERYDAY</span><h2 id="company-title">Your world.<br><em>Plus one.</em></h2><p>Small enough for your desk.<br>Imagined to mean a little more.</p><a class="action" href="https://github.com/woestknap/otis" target="_blank" rel="noopener noreferrer">Follow the becoming <span>↗</span></a><span class="fine">An independent robot project. In development.</span></div></section>
+</main>
+<div class="telemetry" aria-hidden="true"><span id="coordinate">00.00</span><span>PROXIMITY / OTIS</span></div>
+<footer class="flight-deck"><div class="journey-label"><i></i><span id="chapter-name">THE ENCOUNTER</span></div><nav aria-label="Explore the encounter"><a href="#encounter" aria-label="1. The encounter" aria-current="step"><span>01</span></a><a href="#gravity" aria-label="2. Curiosity"><span>02</span></a><a href="#inside" aria-label="3. Possibility"><span>03</span></a><a href="#company" aria-label="4. Company"><span>04</span></a></nav><span class="scroll-hint" id="loading">SCROLL TO ENTER ↓</span><div class="progress" aria-hidden="true"></div></footer>
+<script type="module" src="/src/experience.js"></script>
+</body></html>
