@@ -35,11 +35,10 @@ export async function createWorld(host, state) {
   // Real geometry at distinct depths makes the parallax a consequence of camera travel.
   const field=new THREE.Group();scene.add(field);
   const wire=new THREE.MeshBasicMaterial({color:0x181818,transparent:true,opacity:.15,depthWrite:false});
-  const rings=[];
   for(let i=0;i<3;i++){
-    const ring=new THREE.Mesh(faceplateOutline(2.9+i*.22,.018),wire);
-    ring.position.set(Math.sin(i*1.7)*.65,-.3,-2-i*2.6);
-    ring.rotation.set(.1+i*.12,.15+i*.07,i*.17);field.add(ring);rings.push(ring);
+    const ring=new THREE.Mesh(faceplateOutline(3.3+i*.3,.014),wire);
+    ring.position.set(Math.sin(i*1.7)*.65,-.3,-6-i*3);
+    ring.rotation.set(.1+i*.12,.15+i*.07,i*.17);field.add(ring);
   }
   const orbit=new THREE.Group();scene.add(orbit);
   const orbitMaterial=new THREE.MeshBasicMaterial({color:0x181818,transparent:true,opacity:.25,depthWrite:false});
@@ -51,13 +50,6 @@ export async function createWorld(host, state) {
   const greetingMaterial = new THREE.MeshBasicMaterial({color:0xff5b27,transparent:true,opacity:0,depthWrite:false});
   const greeting = new THREE.Mesh(faceplateOutline(1,.025),greetingMaterial);
   scene.add(greeting);
-  const particles=new Float32Array(100*3);
-  for(let i=0;i<100;i++){particles[i*3]=Math.sin(i*127.1)*9;particles[i*3+1]=Math.cos(i*73.7)*5;particles[i*3+2]=-2-(i%23);}
-  const pointGeometry=new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(particles,3));
-  const pointMaterial=new THREE.PointsMaterial({color:0x6e8269,size:.025,transparent:true,opacity:.5,sizeAttenuation:true});
-  // A quiet horizon gives the floating character a place in a larger world.
-  const floor=new THREE.GridHelper(50,50,0x6e8269,0x6e8269);floor.position.y=-2.1;
-  floor.material.transparent=true;floor.material.opacity=.10;floor.material.depthWrite=false;
   const draco=new DRACOLoader();draco.setDecoderPath('/draco/');
   let gltf;
   try{gltf=await new GLTFLoader().setDRACOLoader(draco).loadAsync(modelUrl);}
@@ -113,11 +105,10 @@ export async function createWorld(host, state) {
     orbit.position.copy(target);orbit.rotation.set(.1,progress*.7,state.still?0:time*.00006);
     orbit.scale.setScalar(mobile?.78:1);
     orbitMaterial.opacity=.05+Math.sin(Math.min(progress,3)*Math.PI/3)*.12;
-    field.position.z=progress*1.8;
+    field.position.z=progress*1.2;
     field.rotation.z=progress*.055;
     const night=Math.exp(-Math.pow((progress-2)*2.1,2));
     wire.color.set(night>.45?'#ff8054':'#181818');orbitMaterial.color.copy(wire.color);
-    floor.material.opacity=.035+(1-night)*.035;
     ambient.intensity=1.2-night*.7;rim.intensity=2+night*2;
     renderer.render(scene,camera);
   }
@@ -128,5 +119,3 @@ export async function createWorld(host, state) {
   resize();activity();
   return {update(){if(state.still)draw(performance.now());},activity,finish(color){shell.forEach(material=>material.color.set(color));draw(performance.now());},hello(){helloAt=performance.now();if(state.still){pivot.rotation.z=.1;renderer.render(scene,camera);}}};
 }
-
-

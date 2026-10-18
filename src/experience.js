@@ -17,12 +17,15 @@ function update() {
   const near = Math.min(3,Math.floor(state.progress + .45));
   const blend = part * part * (3 - 2 * part);
   const bg = state.still ? themes[near] : themes[index].map((n,i)=>Math.round(n + ((themes[Math.min(3,index+1)][i])-n)*blend));
-  const dark = state.progress > 1.55 && state.progress < 2.55;
+  // Select ink from the actual interpolated surface, including between chapters.
+  const linear = bg.map(value => { const c=value/255; return c<=.04045?c/12.92:((c+.055)/1.055)**2.4; });
+  const luminance = linear[0]*.2126+linear[1]*.7152+linear[2]*.0722;
+  const dark = luminance < .179;
   root.style.setProperty('--surface',`rgb(${bg.join(',')})`);
-  root.style.setProperty('--ink',dark?'#f6f6f2':'#181818');
+  root.style.setProperty('--ink',dark?'#ffffff':'#000000');
   root.style.setProperty('--accent',dark?'#ff5b27':'#181818');
   root.style.backgroundColor=`rgb(${bg.join(',')})`;
-  document.body.style.color=dark?'#f6f6f2':'#181818';
+  document.body.style.color=dark?'#ffffff':'#000000';
   root.style.setProperty('--progress',Math.min(1,scrollY/(document.documentElement.scrollHeight-innerHeight)));
   document.querySelector('#coordinate').textContent=['Oh!', 'Hi you.', 'Still me.', '+1'][near];
   document.querySelector('#chapter-name').textContent=names[near];

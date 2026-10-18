@@ -1,4 +1,4 @@
-# Otis — A small world, with you in it
+# Otis — Small bot. Big hello.
 
 A continuous spatial encounter with a companion robot in development. Scrolling drives a Three.js camera through four connected states: encounter, curiosity, possibility, and company. The same character remains present throughout.
 
@@ -32,4 +32,4 @@ Cloudflare Pages: `npm run build`, output `dist`. No backend, API keys, or new d
 
 The earlier landing page's JS/CSS modules and all original model, image-sequence, video, and logo assets remain preserved. Git commit `267ab8b` contains the earlier complete design.
 
-Typography uses Google Fonts with system fallbacks. There are no analytics, forms, or microphone permission requests. Planned robot capabilities are explicitly labeled.
+The identity uses self-hosted Changa One by Eduardo Tunni, distributed under the SIL Open Font License; the complete license is in `public/fonts/OFL-ChangaOne.txt`. Arial/Helvetica provide body-text fallbacks. No font service is contacted. Signal orange, black, and screen white are paired with faceplate-shaped typography, paired-eye navigation, and shell-derived 3D outlines. There are no analytics, forms, or microphone permission requests. Planned robot capabilities are explicitly labeled.
