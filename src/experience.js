@@ -3,8 +3,8 @@ const preference = matchMedia('(prefers-reduced-motion: reduce)');
 const state = { progress: 0, pointerX: 0, pointerY: 0, still: preference.matches };
 const chapters = [...document.querySelectorAll('.chapter')];
 const links = [...document.querySelectorAll('.flight-deck nav a')];
-const names = ['THE ENCOUNTER', 'CURIOSITY', 'POSSIBILITY', 'COMPANY'];
-const themes = [[233,232,223],[213,220,202],[24,38,34],[213,239,159]];
+const names = ['Hello, human.', 'Eyes on you.', 'A change of coat.', 'Room for Otis.'];
+const themes = [[255,91,39],[246,246,242],[24,24,24],[255,91,39]];
 let controls, scheduled = false;
 const root = document.documentElement;
 function update() {
@@ -19,14 +19,14 @@ function update() {
   const bg = state.still ? themes[near] : themes[index].map((n,i)=>Math.round(n + ((themes[Math.min(3,index+1)][i])-n)*blend));
   const dark = state.progress > 1.55 && state.progress < 2.55;
   root.style.setProperty('--surface',`rgb(${bg.join(',')})`);
-  root.style.setProperty('--ink',dark?'#edf0e3':'#273129');
-  root.style.setProperty('--accent',dark?'#d5f68a':'#b9472d');
+  root.style.setProperty('--ink',dark?'#f6f6f2':'#181818');
+  root.style.setProperty('--accent',dark?'#ff5b27':'#181818');
   root.style.backgroundColor=`rgb(${bg.join(',')})`;
-  document.body.style.color=dark?'#edf0e3':'#273129';
+  document.body.style.color=dark?'#f6f6f2':'#181818';
   root.style.setProperty('--progress',Math.min(1,scrollY/(document.documentElement.scrollHeight-innerHeight)));
-  document.querySelector('#coordinate').textContent=(state.progress*33.33).toFixed(2).padStart(5,'0');
+  document.querySelector('#coordinate').textContent=['Oh!', 'Hi you.', 'Still me.', '+1'][near];
   document.querySelector('#chapter-name').textContent=names[near];
-  document.querySelector('#loading').textContent=near===3?'A LITTLE MORE COMPANY':near===0?'SCROLL TO ENTER ↓':'KEEP EXPLORING ↓';
+  document.querySelector('#loading').textContent=near===3?'A little more company.':near===0?'This way for company ↓':'There’s more to Otis ↓';
   links.forEach((link,i)=>i===near?link.setAttribute('aria-current','step'):link.removeAttribute('aria-current'));
   chapters.forEach((el,i)=>{
     const content=el.querySelector('.chapter-content');
@@ -52,5 +52,4 @@ import('./world.js').then(({createWorld})=>createWorld(document.querySelector('#
   document.querySelectorAll('[data-color]').forEach(button=>button.addEventListener('click',()=>{controls.finish(button.dataset.color);document.querySelectorAll('[data-color]').forEach(el=>el.setAttribute('aria-pressed',String(el===button)));}));
   document.querySelector('#hello-action').addEventListener('click',()=>{controls.hello();document.querySelector('#response').textContent='“Oh! There you are.”';});
   requestUpdate();
-}).catch(error=>{console.warn('Spatial portrait unavailable',error);document.querySelector('#world canvas')?.remove();document.querySelector('#loading').textContent='SCROLL TO EXPLORE ↓';document.querySelector('.finishes').hidden=true;document.querySelector('#hello-action').hidden=true;});
-
+}).catch(error=>{console.warn('Spatial portrait unavailable',error);document.querySelector('#world canvas')?.remove();document.querySelector('#loading').textContent='Meet Otis below ↓';document.querySelector('.finishes').hidden=true;document.querySelector('#hello-action').hidden=true;});

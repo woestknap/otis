@@ -5,6 +5,16 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import modelUrl from './otis_shell_v2.glb?url';
 import faceUrl from './anim_comp.mp4?url';
 
+// The clipped corners repeat the faceplate silhouette used by the lettering and controls.
+function faceplateOutline(size, weight) {
+  const points = [[-.72,-1],[.72,-1],[1,-.72],[1,.72],[.72,1],[-.72,1],[-1,.72],[-1,-.72],[-.72,-1]];
+  const path = new THREE.CurvePath();
+  for(let i=1;i<points.length;i++) path.add(new THREE.LineCurve3(
+    new THREE.Vector3(points[i-1][0]*size,points[i-1][1]*size*.9,0),
+    new THREE.Vector3(points[i][0]*size,points[i][1]*size*.9,0)));
+  return new THREE.TubeGeometry(path,64,weight,4,false);
+}
+
 export async function createWorld(host, state) {
   const renderer = new THREE.WebGLRenderer({alpha:true,antialias:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<700?1.5:1.75));
@@ -18,37 +28,36 @@ export async function createWorld(host, state) {
   const room=new RoomEnvironment();
   const environment=pmrem.fromScene(room,.04);
   scene.environment=environment.texture;room.dispose();pmrem.dispose();
-  const ambient=new THREE.HemisphereLight(0xfffae9,0x52664d,1.2);scene.add(ambient);
-  const key=new THREE.DirectionalLight(0xfff5df,2.8);key.position.set(-3,5,5);scene.add(key);
-  const rim=new THREE.DirectionalLight(0xd5f68a,2);rim.position.set(3,2,-3);scene.add(rim);
+  const ambient=new THREE.HemisphereLight(0xffffff,0x686868,1.2);scene.add(ambient);
+  const key=new THREE.DirectionalLight(0xffffff,2.8);key.position.set(-3,5,5);scene.add(key);
+  const rim=new THREE.DirectionalLight(0xff8054,2);rim.position.set(3,2,-3);scene.add(rim);
   const pivot=new THREE.Group();scene.add(pivot);
   // Real geometry at distinct depths makes the parallax a consequence of camera travel.
   const field=new THREE.Group();scene.add(field);
-  const wire=new THREE.MeshBasicMaterial({color:0x6e8269,transparent:true,opacity:.20,depthWrite:false});
+  const wire=new THREE.MeshBasicMaterial({color:0x181818,transparent:true,opacity:.15,depthWrite:false});
   const rings=[];
-  for(let i=0;i<6;i++){
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(2.9+i*.22,.009,5,128),wire);
+  for(let i=0;i<3;i++){
+    const ring=new THREE.Mesh(faceplateOutline(2.9+i*.22,.018),wire);
     ring.position.set(Math.sin(i*1.7)*.65,-.3,-2-i*2.6);
     ring.rotation.set(.1+i*.12,.15+i*.07,i*.17);field.add(ring);rings.push(ring);
   }
   const orbit=new THREE.Group();scene.add(orbit);
-  const orbitMaterial=new THREE.MeshBasicMaterial({color:0xb9472d,transparent:true,opacity:.55,depthWrite:false});
-  for(let i=0;i<3;i++){
-    const arc=new THREE.Mesh(new THREE.TorusGeometry(1.65+i*.22,.006,4,128),orbitMaterial);
-    arc.rotation.set(Math.PI/2+i*.35,i*.7,.3+i*.3);orbit.add(arc);
+  const orbitMaterial=new THREE.MeshBasicMaterial({color:0x181818,transparent:true,opacity:.25,depthWrite:false});
+  for(let i=0;i<1;i++){
+    const arc=new THREE.Mesh(faceplateOutline(1.65,.009),orbitMaterial);
+    arc.rotation.set(.1,.25,-.1);orbit.add(arc);
   }
   // A greeting travels outward through the same physical space as the character.
-  const greetingMaterial = new THREE.MeshBasicMaterial({color:0xd5f68a,transparent:true,opacity:0,depthWrite:false});
-  const greeting = new THREE.Mesh(new THREE.TorusGeometry(1,.018,6,96),greetingMaterial);
+  const greetingMaterial = new THREE.MeshBasicMaterial({color:0xff5b27,transparent:true,opacity:0,depthWrite:false});
+  const greeting = new THREE.Mesh(faceplateOutline(1,.025),greetingMaterial);
   scene.add(greeting);
   const particles=new Float32Array(100*3);
   for(let i=0;i<100;i++){particles[i*3]=Math.sin(i*127.1)*9;particles[i*3+1]=Math.cos(i*73.7)*5;particles[i*3+2]=-2-(i%23);}
   const pointGeometry=new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(particles,3));
   const pointMaterial=new THREE.PointsMaterial({color:0x6e8269,size:.025,transparent:true,opacity:.5,sizeAttenuation:true});
-  field.add(new THREE.Points(pointGeometry,pointMaterial));
   // A quiet horizon gives the floating character a place in a larger world.
   const floor=new THREE.GridHelper(50,50,0x6e8269,0x6e8269);floor.position.y=-2.1;
-  floor.material.transparent=true;floor.material.opacity=.10;floor.material.depthWrite=false;scene.add(floor);
+  floor.material.transparent=true;floor.material.opacity=.10;floor.material.depthWrite=false;
   const draco=new DRACOLoader();draco.setDecoderPath('/draco/');
   let gltf;
   try{gltf=await new GLTFLoader().setDRACOLoader(draco).loadAsync(modelUrl);}
@@ -70,7 +79,7 @@ export async function createWorld(host, state) {
       if(source){texture.offset.copy(source.offset);texture.repeat.copy(source.repeat);texture.center.copy(source.center);texture.rotation=source.rotation;texture.channel=source.channel;}
       material.emissiveIntensity=1.5;
       video.addEventListener('loadeddata',()=>{material.map=texture;material.emissiveMap=texture;material.needsUpdate=true;draw(performance.now());},{once:true});
-    }else{material.color.set('#b5b8a5');material.roughness=.35;material.metalness=.09;shell.push(material);}
+    }else{material.color.set('#e7e7e2');material.roughness=.40;material.metalness=.04;shell.push(material);}
   });
   const roofY=roof?.position.y||0;
   let progress=state.progress,helloAt=-10000,last=0;
@@ -103,11 +112,11 @@ export async function createWorld(host, state) {
     greetingMaterial.opacity = !state.still && helloAge < 1.8 ? (1 - pulse) * .65 : 0;
     orbit.position.copy(target);orbit.rotation.set(.1,progress*.7,state.still?0:time*.00006);
     orbit.scale.setScalar(mobile?.78:1);
-    orbitMaterial.opacity=.08+Math.sin(Math.min(progress,3)*Math.PI/3)*.4;
+    orbitMaterial.opacity=.05+Math.sin(Math.min(progress,3)*Math.PI/3)*.12;
     field.position.z=progress*1.8;
     field.rotation.z=progress*.055;
     const night=Math.exp(-Math.pow((progress-2)*2.1,2));
-    wire.color.set(night>.45?'#b3d9ad':'#6e8269');pointMaterial.color.copy(wire.color);
+    wire.color.set(night>.45?'#ff8054':'#181818');orbitMaterial.color.copy(wire.color);
     floor.material.opacity=.035+(1-night)*.035;
     ambient.intensity=1.2-night*.7;rim.intensity=2+night*2;
     renderer.render(scene,camera);
